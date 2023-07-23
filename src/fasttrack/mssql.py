@@ -68,28 +68,23 @@ def brute(ipaddr, username, port, wordlist):
                                                                         bold=core.bcolors.BOLD,
                                                                         endc=core.bcolors.ENDC))
 
-                target_server = _mssql.connect("{0}:{1}".format(ipaddr, port),
-                                               username,
-                                               password)
-                if target_server:
+                if target_server := _mssql.connect(
+                    "{0}:{1}".format(ipaddr, port), username, password
+                ):
                     core.print_status("\nSuccessful login with username {0} and password: {1}".format(username,
                                                                                                       password))
                     counter = 1
                     successful_password = password
                     break
 
-            # if login failed or unavailable server
             except:
                 pass
 
-    # if we brute forced a machine
     if counter == 1:
         return ",".join([ipaddr, username, port, successful_password])
-    # else we didnt and we need to return a false
-    else:
-        if ipaddr:
-            core.print_warning("Unable to guess the SQL password for {0} with username of {1}".format(ipaddr, username))
-        return False
+    if ipaddr:
+        core.print_warning("Unable to guess the SQL password for {0} with username of {1}".format(ipaddr, username))
+    return False
 
 
 #

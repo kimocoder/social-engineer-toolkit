@@ -99,8 +99,6 @@ try:
     from Crypto.Cipher import AES
 except ImportError:
     print("[!] The python-pycrypto python module not installed. You will lose the ability to use multi-pyinjector.")
-    pass
-
 #
 # The Social-Engineer Toolkit (SET)     #
 # Written by: David Kennedy (ReL1K)     #
@@ -188,7 +186,9 @@ try:
                 filewrite.write("user accepted")
             print(core.bcolors.ENDC)
         else:
-            print(core.bcolors.ENDC + "[!] Exiting the Social-Engineer Toolkit, have a nice day." + core.bcolors.ENDC)
+            print(
+                f"{core.bcolors.ENDC}[!] Exiting the Social-Engineer Toolkit, have a nice day.{core.bcolors.ENDC}"
+            )
             sys.exit()
 
     while True:
@@ -218,16 +218,20 @@ try:
 
         # rance
         if main_menu_choice == "rance":
-            core.print_warning(core.bcolors.BOLD + "We miss you buddy. David Jones (Rance) changed a lot of us and you'll always be apart of our lives (and SET). Fuck Cancer." + core.bcolors.ENDC)
+            core.print_warning(
+                f"{core.bcolors.BOLD}We miss you buddy. David Jones (Rance) changed a lot of us and you'll always be apart of our lives (and SET). Fuck Cancer.{core.bcolors.ENDC}"
+            )
             pause = input("Press {return} to continue.")
 
         # cavs
         if main_menu_choice == "cavs":
-            core.print_warning(core.bcolors.BOLD + "2015-2016 CHAMPS BABY!!! C l e e e e e  e v  eeee l a a n n d d d d d d d d d d d " + core.bcolors.ENDC)
+            core.print_warning(
+                f"{core.bcolors.BOLD}2015-2016 CHAMPS BABY!!! C l e e e e e  e v  eeee l a a n n d d d d d d d d d d d {core.bcolors.ENDC}"
+            )
             pause = input("Press {return} to continue.")
 
         # quit out
-        if main_menu_choice == 'exit' or main_menu_choice == "99" or main_menu_choice == "quit":
+        if main_menu_choice in ['exit', "99", "quit"]:
             core.exit_set()
             # cleans up stale processes from SET
             try:
@@ -271,13 +275,11 @@ try:
         if main_menu_choice == '6':
             core.help_menu()
 
-# handle keyboard interrupts
 except KeyboardInterrupt:
     print(("\n\nThank you for {0}shopping{1} with the Social-Engineer Toolkit."
            "\n\nHack the Gibson...and remember...hugs are worth more "
            "than handshakes.\n".format(core.bcolors.RED, core.bcolors.ENDC)))
 
-# handle exceptions
 except Exception as error:
     core.log(error)
     print("\n\n[!] Something went wrong, printing the error: " + str(error))

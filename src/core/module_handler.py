@@ -7,9 +7,6 @@ import re
 import sys
 from src.core.setcore import *
 
-# this is just if the user wants to return to menu
-menu_return = "false"
-
 # base counter to identify numbers
 counter = 0
 
@@ -26,11 +23,10 @@ for name in glob.glob("modules/*.py"):
 
     for line in fileopen:
         line = line.rstrip()
-        match = re.search("MAIN=", line)
-        if match:
+        if match := re.search("MAIN=", line):
             line = line.replace('MAIN="', "")
             line = line.replace('"', "")
-            line = "  " + str(counter) + ". " + line
+            line = f"  {str(counter)}. {line}"
             print(line)
 
 print("\n  99. Return to the previous menu\n")
@@ -39,9 +35,7 @@ choice = raw_input(setprompt(["9"], ""))
 if choice == 'exit':
     exit_set()
 
-if choice == '99':
-    menu_return = "true"
-
+menu_return = "true" if choice == '99' else "false"
 # throw error if not integer
 try:
     choice = int(choice)
@@ -68,15 +62,14 @@ if menu_return == "false":
             # this will import the third party module
 
             try:
-                exec("import " + name)
+                exec(f"import {name}")
             except:
                 pass
 
             # this will call the main() function inside the python file
             # if it doesn't exist it will still continue just throw a warning
             try:
-                exec("%s.main()" % (name))
-            # handle the exception if main isn't there
+                exec(f"{name}.main()")
             except Exception as e:
-                raw_input("   [!] There was an issue with a module: %s." % (e))
+                raw_input(f"   [!] There was an issue with a module: {e}.")
                 return_continue()

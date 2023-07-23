@@ -44,11 +44,14 @@ def launch():
     core.print_status("Launching Metasploit and attacking the systems specified. This may take a moment..")
     # try/catch block
     try:
-        child = pexpect.spawn("{0} -r {1}\r\n\r\n".format(os.path.join(core.meta_path + 'msfconsole'),
-                                                          os.path.join(core.userconfigpath, "autopwn.answer")))
+        child = pexpect.spawn(
+            "{0} -r {1}\r\n\r\n".format(
+                os.path.join(f'{core.meta_path}msfconsole'),
+                os.path.join(core.userconfigpath, "autopwn.answer"),
+            )
+        )
         child.interact()
 
-    # handle exceptions and log them
     except Exception as error:
         core.log(error)
 
@@ -64,5 +67,5 @@ def do_autopwn():
     confirm_attack = input(core.setprompt(["19", "20"], "You are about to attack systems are you sure [y/n]"))
 
     # if we are sure, then lets do it
-    if confirm_attack == "yes" or confirm_attack == "y":
+    if confirm_attack in ["yes", "y"]:
         launch()

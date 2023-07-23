@@ -12,11 +12,15 @@ try:
 except NameError:
     pass
 
-print("The" + core.bcolors.BOLD + " SCCM Attack Vector " + core.bcolors.ENDC +
-      "will utilize the SCCM configurations to deploy malicious software. \n\n"
-      "You need to have the SMSServer name and a PackageID you want to package "
-      "on the website. Then you need to copy this configuration file to the "
-      "startup directory for all of the users on the server.")
+print(
+    (
+        f"The{core.bcolors.BOLD} SCCM Attack Vector {core.bcolors.ENDC}"
+        + "will utilize the SCCM configurations to deploy malicious software. \n\n"
+        "You need to have the SMSServer name and a PackageID you want to package "
+        "on the website. Then you need to copy this configuration file to the "
+        "startup directory for all of the users on the server."
+    )
+)
 
 sms_server = input("Enter the IP address or hostname of the SMS Server: ")
 package_id = input("Enter the Package ID of the package you want to patch: ")
@@ -53,4 +57,9 @@ with open(os.path.join(core.userconfigpath, "reports/sccm_configuration.txt"), '
 core.print_status("The SCCM configuration script has been successfully created.")
 core.print_status("You need to copy the script to the startup folder of the server.")
 core.print_status("Report has been exported to {0}".format(os.path.join(core.definepath, "reports/sccm_configuration.txt")))
-pause = input("Press " + core.bcolors.RED + "{return} " + core.bcolors.ENDC + "to exit this menu.")
+pause = input(
+    f"Press {core.bcolors.RED}"
+    + "{return} "
+    + core.bcolors.ENDC
+    + "to exit this menu."
+)

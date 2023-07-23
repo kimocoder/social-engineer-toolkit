@@ -51,8 +51,7 @@ if operating_system == "posix":
     def kill_proc(port, flag):
         proc = subprocess.Popen("netstat -antp | grep '{0}'".format(port), shell=True, stdout=subprocess.PIPE)
         stdout_value = proc.communicate()[0]
-        a = re.search("\d+/{0}".format(flag), stdout_value)
-        if a:
+        if a := re.search("\d+/{0}".format(flag), stdout_value):
             b = a.group()
             b = b.replace("/{0}".format(flag), "")
             subprocess.Popen("kill -9 {0} 1> /dev/null 2> /dev/null".format(b), shell=True).wait()

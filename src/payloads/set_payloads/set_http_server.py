@@ -62,7 +62,7 @@ class GetHandler(BaseHTTPRequestHandler):
         # this will be our shell command
         message = input("shell> ")
         # if we specify quit, then sys arg out of the shell
-        if message == "quit" or message == "exit":
+        if message in ["quit", "exit"]:
             print ("\nExiting the SET RevShell Listener... ")
             time.sleep(2)
             sys.exit()
@@ -104,12 +104,7 @@ class GetHandler(BaseHTTPRequestHandler):
 # if __name__ == '__main__':
 try:
     # bind to all interfaces
-    if check_options("PORT=") != 0:
-        port = check_options("PORT=")
-
-    else:
-        port = 443
-
+    port = check_options("PORT=") if check_options("PORT=") != 0 else 443
     server = HTTPServer(('', int(port)), GetHandler)
     print("""############################################
 #
@@ -128,4 +123,4 @@ try:
     except KeyboardInterrupt:
         print("[!] Exiting the encrypted webserver shell.. hack the gibson.")
 except Exception as e:
-    print("Something went wrong, printing error: " + e)
+    print(f"Something went wrong, printing error: {e}")
