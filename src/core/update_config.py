@@ -93,11 +93,11 @@ def update_config():
     if not os.path.isdir("/etc/setoolkit"):
         os.makedirs("/etc/setoolkit")
 
-    init_file = open("/etc/setoolkit/set.config", "r")
-    new_config = open("/etc/setoolkit/set_config.py", "w")
-    timestamp = str(datetime.datetime.now())
+    with open("/etc/setoolkit/set.config", "r") as init_file:
+        new_config = open("/etc/setoolkit/set_config.py", "w")
+        timestamp = str(datetime.datetime.now())
 
-    new_config.write("""#!/usr/bin/python\n
+        new_config.write("""#!/usr/bin/python\n
 #######################################################################
 ##                    DO NOT MODIFY THIS FILE                        ##
 #######################################################################
@@ -111,40 +111,34 @@ def update_config():
 #                                                                     #
 #######################################################################
 CONFIG_DATE='""" + timestamp + """'\n""")
-    for line in init_file:
-        try:
-            if not line.startswith("#"):
-                line = line.rstrip()
-                line = line.split("=")
-                setting = line[0]
-                value = line[1]
-                if value == "ON":
-                    value = "True"
-                elif value == "OFF":
-                    value = "False"
-                else:
-                    pass
+        for line in init_file:
+            try:
+                if not line.startswith("#"):
+                    line = line.rstrip()
+                    line = line.split("=")
+                    setting = line[0]
+                    value = line[1]
+                    if value == "ON":
+                        value = "True"
+                    elif value == "OFF":
+                        value = "False"
+                    if quoted := value_type(setting):
+                        new_config.write(f'{setting}="{value}' + '"\n')
+                    else:
+                        new_config.write(f'{setting}={value}' + '\n')
+            except:
+                pass
 
-                quoted = value_type(setting)
-
-                if quoted:
-                    new_config.write(setting + '="' + value + '"\n')
-                else:
-                    new_config.write(setting + '=' + value + '\n')
-        except:
-            pass
-
-    init_file.close()
     new_config.close()
     sleep(1)
     sys.path.append("/etc/setoolkit")
     from set_config import CONFIG_DATE as verify
-    print_info("New set.config.py file generated on: %s" % timestamp)
+    print_info(f"New set.config.py file generated on: {timestamp}")
     print_info("Verifying configuration update...")
     if verify == timestamp:
-        print_status("Update verified, config timestamp is: %s" % timestamp)
+        print_status(f"Update verified, config timestamp is: {timestamp}")
     else:
-        print_error("Update failed? Timestamp on config file is: %s" % verify)
+        print_error(f"Update failed? Timestamp on config file is: {verify}")
     print_status("SET is using the new config, no need to restart")
     # return_continue()
 

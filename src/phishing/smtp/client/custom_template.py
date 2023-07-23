@@ -7,7 +7,7 @@ try:
     print ("\n   Always looking for new templates! In the set/src/templates directory send an email\nto davek@secmaniac.com if you got a good template!")
     author = input(core.setprompt("0", "Name of the author"))
     filename = randomgen = random.randrange(1, 99999999999999999999)
-    filename = str(filename) + (".template")
+    filename = f"{filename}.template"
     subject = input(core.setprompt("0", "Email Subject"))
     try:
         body = input(core.setprompt(
@@ -20,11 +20,10 @@ try:
                 break
     except KeyboardInterrupt:
         pass
-    filewrite = open("src/templates/%s" % (filename), "w")
-    filewrite.write("# Author: " + author + "\n#\n#\n#\n")
-    filewrite.write('SUBJECT=' + '"' + subject + '"\n\n')
-    filewrite.write('BODY=' + '"' + body + '"\n')
-    print("\n")
-    filewrite.close()
+    with open(f"src/templates/{filename}", "w") as filewrite:
+        filewrite.write(f"# Author: {author}" + "\n#\n#\n#\n")
+        filewrite.write('SUBJECT=' + '"' + subject + '"\n\n')
+        filewrite.write('BODY=' + '"' + body + '"\n')
+        print("\n")
 except Exception as e:
-    print("   An error occured, printing error message: " + str(e))
+    print(f"   An error occured, printing error message: {str(e)}")

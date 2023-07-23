@@ -41,7 +41,7 @@ class StoppableHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             if not self.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(301)
-                self.send_header("Location", self.path + "/")
+                self.send_header("Location", f"{self.path}/")
                 self.end_headers()
                 return None
             for index in "index.html", "index.htm":
@@ -52,10 +52,7 @@ class StoppableHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 return self.list_directory(path)
         ctype = self.guess_type(path)
-        if ctype.startswith('text/'):
-            mode = 'r'
-        else:
-            mode = 'rb'
+        mode = 'r' if ctype.startswith('text/') else 'rb'
         try:
             f = open(path, mode)
         except IOError:

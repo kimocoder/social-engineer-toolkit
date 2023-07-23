@@ -17,10 +17,10 @@ definepath = os.getcwd()
 sys.path.append(definepath)
 
 # cleanup
-if os.path.isfile(userconfigpath + "uac.address"):
-    os.remove(userconfigpath + "uac.address")
-if os.path.isfile(userconfigpath + "system.address"):
-    os.remove(userconfigpath + "system.address")
+if os.path.isfile(f"{userconfigpath}uac.address"):
+    os.remove(f"{userconfigpath}uac.address")
+if os.path.isfile(f"{userconfigpath}system.address"):
+    os.remove(f"{userconfigpath}system.address")
 
 # will remove this later
 core_modules = True

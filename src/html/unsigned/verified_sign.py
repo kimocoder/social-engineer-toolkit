@@ -93,7 +93,7 @@ if firstprompt == "2":
     # prompt for a different certificate
     prompt = input(core.setprompt("0", "Have you already generated a code signing-certificate? [yes|no]")).lower()
     # if we selected yes if we generated a code signing certificate
-    if prompt == "yes" or prompt == "y":
+    if prompt in ["yes", "y"]:
         # prompt the user to import the code signing certificate
         cert_path = input(core.setprompt("0", "Path to the code signing certificate file (provided by CA)"))
         if not os.path.isfile(cert_path):
@@ -110,75 +110,76 @@ if firstprompt == "2":
         try:
             core.print_info("Importing the certificate into SET...")
 
-            subprocess.Popen("keytool -import -alias MyCert -file {}".format(cert_path), shell=True).wait()
+            subprocess.Popen(
+                f"keytool -import -alias MyCert -file {cert_path}", shell=True
+            ).wait()
             # trigger that we have our certificate already and bypass the
             # request process below
             use_flag = 1
 
-        # exception here in case it was already imported before
         except:
             pass
 
     # this will exit the menu
-    if prompt == "quit" or prompt == "q":
+    if prompt in ["quit", "q"]:
         use_flag = 0
         prompt = "yes"
         cert_path = ""
-    # if we have a cert now or if we need to generate one
-    if use_flag == 1 or prompt == "no" or prompt == "n":
-
         # if we selected no we need to create one
-        if prompt == "no" or prompt == "n":
-            # get the stuff ready to do it
-            core.print_info("Generating the initial request for Verisign...")
-            # grab input from user, fqdn
-            answer1 = input(core.setprompt("0", "FQDN (ex. www.thisisafakecert.com)"))
-            # grab name of organizaton
-            answer2 = input(core.setprompt("0", "Name of the organization"))
-            # grab two letter country code
-            answer3 = input(core.setprompt("0", "Two letter country code (ex. US)"))
-            # if blank, default to US
-            if not answer3:
-                answer3 = "US"
-            # grab state
-            answer4 = input(core.setprompt("0", "State"))
-            # grab city
-            answer5 = input(core.setprompt("0", "City"))
-            # generate the request crl
-            subprocess.Popen('keytool '
-                             '-genkey '
-                             '-alias MyCert '
-                             '-keyalg RSA '
-                             '-keysize 2048 '
-                             '-dname "CN={a1},O={a2},C={a3},ST={a4},L={a5}"'.format(a1=answer1,
-                                                                                    a2=answer2,
-                                                                                    a3=answer3,
-                                                                                    a4=answer4,
-                                                                                    a5=answer5),
-                             shell=True).wait()
+    if prompt in ["no", "n"]:
+        # get the stuff ready to do it
+        core.print_info("Generating the initial request for Verisign...")
+        # grab input from user, fqdn
+        answer1 = input(core.setprompt("0", "FQDN (ex. www.thisisafakecert.com)"))
+        # grab name of organizaton
+        answer2 = input(core.setprompt("0", "Name of the organization"))
+        # grab two letter country code
+        answer3 = input(core.setprompt("0", "Two letter country code (ex. US)"))
+        # if blank, default to US
+        if not answer3:
+            answer3 = "US"
+        # grab state
+        answer4 = input(core.setprompt("0", "State"))
+        # grab city
+        answer5 = input(core.setprompt("0", "City"))
+        # generate the request crl
+        subprocess.Popen('keytool '
+                         '-genkey '
+                         '-alias MyCert '
+                         '-keyalg RSA '
+                         '-keysize 2048 '
+                         '-dname "CN={a1},O={a2},C={a3},ST={a4},L={a5}"'.format(a1=answer1,
+                                                                                a2=answer2,
+                                                                                a3=answer3,
+                                                                                a4=answer4,
+                                                                                a5=answer5),
+                         shell=True).wait()
 
-            core.print_info("Exporting the cert request to text file...")
+        core.print_info("Exporting the cert request to text file...")
             # generate the request and export to certreq
-            subprocess.Popen("keytool -certreq -alias MyCert > {}".format(os.path.join(definepath, "certreq.txt")), shell=True).wait()
-            core.print_status("Export successful. Exported certificate under the SET root under certreq.txt")
-            core.print_warning("You will now need to pay for a code signing certificate through Verisign/Thawte/GoDaddy/etc.")
-            core.print_warning("Be sure to purchase a code signing certificate, not a normal website SSL certificate.")
-            core.print_info("When finished, enter the path to the .cer file below")
-            # cert_path is used for the certificate path when generating
+        subprocess.Popen(
+            f'keytool -certreq -alias MyCert > {os.path.join(definepath, "certreq.txt")}',
+            shell=True,
+        ).wait()
+        core.print_status("Export successful. Exported certificate under the SET root under certreq.txt")
+        core.print_warning("You will now need to pay for a code signing certificate through Verisign/Thawte/GoDaddy/etc.")
+        core.print_warning("Be sure to purchase a code signing certificate, not a normal website SSL certificate.")
+        core.print_info("When finished, enter the path to the .cer file below")
+        # cert_path is used for the certificate path when generating
 
-            cert_path = input(core.setprompt("0", "Path for the code signing certificate file (.spc file)"))
-            # if we can't find the filename
-            if not os.path.isfile(cert_path):
-                while True:
-                    core.print_error("ERROR:Filename not found. Please try again.")
-                    # re-prompt if file name doesn't exist
-                    cert_path = input(core.setprompt("0", "Path to the .cer certificate file from Verisign"))
-                    # if we detect file, then break out of loop
-                    if os.path.isfile(cert_path):
-                        break
+        cert_path = input(core.setprompt("0", "Path for the code signing certificate file (.spc file)"))
+        # if we can't find the filename
+        if not os.path.isfile(cert_path):
+            while True:
+                core.print_error("ERROR:Filename not found. Please try again.")
+                # re-prompt if file name doesn't exist
+                cert_path = input(core.setprompt("0", "Path to the .cer certificate file from Verisign"))
+                # if we detect file, then break out of loop
+                if os.path.isfile(cert_path):
+                    break
 
-            # import the certificate
-            subprocess.Popen("keytool -import -alias MyCert -file {0}".format(cert_path), shell=True).wait()
+        # import the certificate
+        subprocess.Popen("keytool -import -alias MyCert -file {0}".format(cert_path), shell=True).wait()
 
     # if our certificate is in the data store
     if os.path.isfile(cert_path):

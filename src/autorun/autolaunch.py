@@ -66,9 +66,9 @@ core.print_status("Note a backup copy of template.pdf is also in /root/.set/temp
 core.print_info("Copy the contents of the folder to a CD/DVD/USB to autorun")
 
 # if we want to launch payload and automatically create listener
-if trigger in [1, 2, 3]:
+if trigger in {1, 2, 3}:
     choice1 = core.yesno_prompt("0", "Create a listener right now [yes|no]")
-    if choice1.lower() == "yes" or choice1.lower() == "y":
+    if choice1.lower() in ["yes", "y"]:
         # if we used something to create other than solo.py then write out the
         # listener
         if not os.path.isfile(os.path.join(core.userconfigpath, "meta_config")):

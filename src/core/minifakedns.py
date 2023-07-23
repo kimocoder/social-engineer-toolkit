@@ -105,9 +105,7 @@ class DNSQuery:
         #
         # In one line of Python code, we get the following:
         kind = (flags[0] >> 3) & 31 # Opcode is in bits 4, 5, 6, and 7 of first byte.
-                                    # QR bit is 8th bit, but it should be 0.
-                                    # And now, we test to see if the result
-        if 0 == kind:               # was a standard query.
+        if kind == 0:           # was a standard query.
 
             # The header of a DNS packet is exactly twelve bytes long,
             # meaning that the very start of the first DNS question
@@ -118,8 +116,8 @@ class DNSQuery:
             # labels. Each label is prefixed by a single byte denoting
             # that label's length.
             length = data[offset]
-            while 0 != length:
-                self.domain += data[offset + 1 : offset + length + 1].decode() + '.'
+            while length != 0:
+                self.domain += f'{data[offset + 1:offset + length + 1].decode()}.'
                 offset += length + 1
                 length = data[offset]
 
@@ -153,7 +151,7 @@ class DNSQuery:
             packet += self.data[12:]                                        # Original Domain Name Question
             packet += b'\xc0\x0c'                                           # Pointer to domain name
             packet += b'\x00\x01\x00\x01\x00\x00\x00\x3c\x00\x04' # Response type, ttl and resource data length -> 4 bytes
-            packet += bytes([int(x) for x in ip.split('.')])      # 4 bytes of IP.
+            packet += bytes(int(x) for x in ip.split('.'))
         return packet
 
 class MiniFakeDNS(threading.Thread):
@@ -185,7 +183,9 @@ class MiniFakeDNS(threading.Thread):
             try:
                 udps.bind(('', self.port))
             except OSError as e:
-                if 'Address already in use' == e.strerror and os.path.exists('/etc/resolv.conf'):
+                if e.strerror == 'Address already in use' and os.path.exists(
+                    '/etc/resolv.conf'
+                ):
                     # We can't listen on port 53 because something else got
                     # there before we did. It's probably systemd-resolved's
                     # DNS stub resolver, but since we are probably running as
@@ -223,7 +223,7 @@ class MiniFakeDNS(threading.Thread):
         """
         try:
             os.mkdir('/etc/systemd/resolved.conf.d')
-        except (OSError, FileExistsError):
+        except OSError:
             pass
         with open('/etc/systemd/resolved.conf.d/99-setoolkit-dns.conf', 'w') as f:
             f.write("[Resolve]\nDNS=9.9.9.9\nDNSStubListener=no")

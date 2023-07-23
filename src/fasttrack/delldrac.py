@@ -102,9 +102,6 @@ def login_drac(ipaddr_single):
         # capture the response
         response = urlopen(url, data, headers, timeout=2)
         data = response.read()
-        # if we failed our login, just pass through
-        if "Failure_Login_IPMI_Then_LDAP" in data:
-            pass
         # Failure_No_Free_Slot means there are no sessions available need to
         # log someone off
         if "Failure_No_Free_Slot" in data:
@@ -121,7 +118,6 @@ def login_drac(ipaddr_single):
                                                                                                                     ipaddr_single))
             global global_check2
             global_check2 = 1
-    # handle failed attempts and move on
     except:
         pass
 
@@ -155,9 +151,6 @@ def login_chassis(ipaddr_single):
         # capture the response
         response = urlopen(url, data, headers, timeout=2)
         data = response.read()
-        # if we failed to login
-        if "login_failed_hr_top" in data:
-            pass  # login failed
         # to many people logged in at a given time
         if 'Connection refused, maximum sessions already in use.' in data:
             print(("{0}[!]{1} There are to many people logged but un: root and pw: calvin are legit on IP: {2}".format(bcolors.YELLOW,
@@ -174,7 +167,6 @@ def login_chassis(ipaddr_single):
             global global_check4
             global_check4 = 1
 
-    # except and move on for failed login attempts
     except:
         pass
 
@@ -241,14 +233,11 @@ def ip2bin(ip):
 def dec2bin(n, d=None):
     s = ""
     while n > 0:
-        if n & 1:
-            s = "1" + s
-        else:
-            s = "0" + s
+        s = f"1{s}" if n & 1 else f"0{s}"
         n >>= 1
     if d is not None:
         while len(s) < d:
-            s = "0" + s
+            s = f"0{s}"
     if s == "":
         s = "0"
     return s
@@ -256,9 +245,7 @@ def dec2bin(n, d=None):
 
 # convert a binary string into an IP address
 def bin2ip(b):
-    ip = ""
-    for i in range(0, len(b), 8):
-        ip += str(int(b[i:i + 8], 2)) + "."
+    ip = "".join(f"{int(b[i:i + 8], 2)}." for i in range(0, len(b), 8))
     return ip[:-1]
 
 
@@ -278,9 +265,7 @@ def scan(ipaddr):
             ip_prefix = base_ip[:-(32 - subnet)]
             for i in range(2 ** (32 - subnet)):
                 ipaddr_single = bin2ip(ip_prefix + dec2bin(i, (32 - subnet)))
-                # if we are valid proceed
-                ip_check = is_valid_ip(ipaddr_single)
-                if ip_check:
+                if ip_check := is_valid_ip(ipaddr_single):
                     # do this to limit how fast it can scan, anything more
                     # causes CPU to hose
                     if counter > 255:

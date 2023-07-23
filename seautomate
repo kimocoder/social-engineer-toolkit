@@ -74,7 +74,7 @@ if os.path.isfile(filename):
     try:
         print("[*] Spawning SET in a threaded process...")
         cmd = find_executable('python3') or find_executable('python')
-        child = pexpect.spawn("{} setoolkit".format(cmd))
+        child = pexpect.spawn(f"{cmd} setoolkit")
         child.expect("99\) Exit the Social-Engineer Toolkit")
         with open(filename) as fileopen:
             for line in fileopen:
@@ -105,11 +105,10 @@ if os.path.isfile(filename):
                         child.sendline("\n")
                         child.sendcontrol('c')
 
-                    # if the user is using pexpect < 2.3
                     except AttributeError:
                         print("[-] Error: You are running pexpect < 2.3 which is needed for this function")
                         choice = input("Would you like to install it now yes or no: ")
-                        if choice == "yes" or choice == "y":
+                        if choice in ["yes", "y"]:
                             #subprocess.Popen("wget http://sourceforge.net/projects/pexpect/files/pexpect/Release%202.3/pexpect-2.3.tar.gz;"
                             #                 "tar -zxvf pexpect-2.3.tar.gz;"
                             #                 "cd pexpect-2.3;"
@@ -129,15 +128,12 @@ if os.path.isfile(filename):
         print("[*] Finished sending commands, interacting with the interface..")
         child.interact()
 
-    # sometimes pexpect can throw errors upon exit this handles them
     except OSError:
         sys.exit()
 
-    # handle keyboardinterrupts (controlc)
     except KeyboardInterrupt:
         print("[*] Control-C detected, exiting the Social-Engineer Toolkit..")
         sys.exit()
 
-    # handle everything else
     except Exception as e:
         print("[*] Something went wrong, printing error: {0}".format(e))

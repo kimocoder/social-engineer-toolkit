@@ -51,7 +51,7 @@ def main():
 def print_params(params):
     print()
     for entry in params:
-        print(entry + " = " + params[entry])
+        print(f"{entry} = {params[entry]}")
 
 ### looper - prompts for seconds to sleep, starts loop
 def looper(params):
@@ -72,8 +72,8 @@ def send_spoof(params):
 def auto_params(url):
     try: #parses URL for host and page
         m = re.search('(https?:\/\/(.*?))\/(.*)',url)
-        host = str(m.group(1))
-        page = "/" + str(m.group(3))
+        host = str(m[1])
+        page = f"/{str(m[3])}"
     except:
         print("\n[-] Unable to parse URL for host/page. Did you forget an ending '/'?\n")
         sys.exit()
@@ -84,37 +84,39 @@ def auto_params(url):
         sys.exit()
     try: #parses target webpage for title
         m = re.search('<title>(.*)<\/title>', r.text)
-        page_title = str(m.group(1))
+        page_title = str(m[1])
     except:
         print("\n[-] Unable to parse target page for title.\n")
         sys.exit()
     try: #parses target webpage for tracking id
         m = re.search("'(UA-(.*))',", r.text)
-        tid = str(m.group(1))
+        tid = str(m[1])
     except:
         print("\n[-] Unable to find TrackingID (UA-XXXXX). Website may not be running Google Anayltics.\n")
         sys.exit()
-    #builds params dict
-    params = {}
-    params['v'] = "1"
-    params['tid'] = tid
-    params['cid'] = "555"
-    params['t'] = "pageview"
-    params['dh'] = host
-    params['dp'] = page
-    params['dt'] = page_title
-    params['aip'] = "1"
-    params['dr'] = input("\n[*] Enter referral URL to spoof (E.g. 'http://xyz.com/'): ")
-    return params
+    return {
+        'v': "1",
+        'tid': tid,
+        'cid': "555",
+        't': "pageview",
+        'dh': host,
+        'dp': page,
+        'dt': page_title,
+        'aip': "1",
+        'dr': input(
+            "\n[*] Enter referral URL to spoof (E.g. 'http://xyz.com/'): "
+        ),
+    }
 
 ### manual_params - prompts for all params
 def manual_params():
-    params = {}
-    params['v'] = "1"
-    params['tid'] = input("\n[*] Enter TrackingID (tid)(UA-XXXXX): ")
-    params['cid'] = "555"
-    params['t'] = "pageview"
-    params['aip'] = "1"
+    params = {
+        'v': "1",
+        'tid': input("\n[*] Enter TrackingID (tid)(UA-XXXXX): "),
+        'cid': "555",
+        't': "pageview",
+        'aip': "1",
+    }
     params['dh'] = input("[*] Enter target host (dh)(E.g. 'http://xyz.xyz)': ")
     params['dp'] = input("[*] Enter target page (dp)(E.g. '/aboutme'): ")
     params['dt'] = input("[*] Enter target page title (dt)(E.g. 'About Me'): ")

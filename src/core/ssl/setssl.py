@@ -15,8 +15,8 @@ subprocess.Popen("mkdir CA;cd CA;mkdir newcerts private", shell=True).wait()
 os.chdir("CA/")
 # create necessary files
 subprocess.Popen("echo '01' > serial;touch index.txt", shell=True).wait()
-filewrite = open("openssl.cnf", "w")
-filewrite.write("""#
+with open("openssl.cnf", "w") as filewrite:
+    filewrite.write("""#
 # OpenSSL configuration file.
 #
 
@@ -56,8 +56,6 @@ countryName_default = US
 basicConstraints = CA:TRUE
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid:always,issuer:always""")
-# close editing of the file
-filewrite.close()
 subprocess.Popen(
     "openssl req -new -x509 -extensions v3_ca -keyout private/cakey.pem -out newcert.pem -days 3650 -config ./openssl.cnf", shell=True).wait()
 subprocess.Popen(
