@@ -61,7 +61,7 @@ def definepath():
         if os.path.isfile("setoolkit"):
             return os.getcwd()
         else:
-            return "/usr/share/setoolkit/"
+            return "/usr/local/share/setoolkit/"
 
     else:
         return os.getcwd()
@@ -397,9 +397,9 @@ def meta_path():
                 trigger = 1
 
         # Kali linux bleeding edge should return this in order to work
-        if os.path.isfile("/usr/share/metasploit-framework/msfconsole"):
+        if os.path.isfile("/usr/local/share/metasploit-framework/msfconsole"):
             if trigger == 0:
-                msf_path = "/usr/share/metasploit-framework/"
+                msf_path = "/usr/local/share/metasploit-framework/"
                 trigger = 1
 
         # if we didn't find anything
@@ -1365,7 +1365,7 @@ def kill_proc(port, flag):
     proc = subprocess.Popen("netstat -antp | grep '%s'" %
                             (port), shell=True, stdout=subprocess.PIPE)
     stdout_value = proc.communicate()[0]
-    a = re.search("\d+/%s" % (flag), stdout_value)
+    a = re.search(r"\d+/%s" % (flag), stdout_value)
     if a:
         b = a.group()
         b = b.replace("/%s" % (flag), "")
@@ -1803,7 +1803,7 @@ def printCIDR(c):
 
 def validateCIDRBlock(b):
     # appropriate format for CIDR block ($prefix/$subnet)
-    p = re.compile("^([0-9]{1,3}\.){0,3}[0-9]{1,3}(/[0-9]{1,2}){1}$")
+    p = re.compile(r"^([0-9]{1,3}\.){0,3}[0-9]{1,3}(/[0-9]{1,2}){1}$")
     if not p.match(b):
         return False
     # extract prefix and subnet size
